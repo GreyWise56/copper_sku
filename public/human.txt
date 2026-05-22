@@ -230,6 +230,13 @@ THINGS THAT CONFUSE PEOPLE
   the B) is the copper Aurora, and it takes finishes like everything
   else.
 
+* Gas SKUs don't show the ELECTRIC accessory panel, and Electric SKUs
+  don't show the GAS panel. The master sheet has some compliance
+  features (Adhara Dark Sky, Turtle Friendly, shade variants) sitting
+  under the ELECTRIC column even on gas product rows, but those don't
+  apply to a gas fixture. The builder hides the whole opposite-ignition
+  panel so you can't accidentally append them.
+
 
 ================================================================
 WHERE THE TRUTH LIVES

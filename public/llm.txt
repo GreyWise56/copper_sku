@@ -120,7 +120,10 @@ In SKU code append order (left to right in the SKU string):
 
 10. **AOB is the ONLY brass-only family.** No finish suffix is ever added to AOB SKUs. AO (without the B) is the copper Aurora and accepts finishes normally.
 
-11. **Ignition exclusions.** Gas fixtures cannot use CHM, SM, QCM, or HCHM (ceiling chain/stem mounts). Wind Guard (WG) cannot be combined with Propane Tip (PT), e-lyte (ELI), or Auto Shutoff Valve (ASV).
+11. **Ignition exclusions.**
+    - **Opposite-ignition panel is hidden entirely.** Gas families do NOT surface the ELECTRIC accessory panel; Electric families do NOT surface the GAS panel. The master sheet stores some ignition-agnostic compliance features (Adhara Dark Sky, Turtle Friendly, shades) under the ELECTRIC column, so their cells are populated for gas SKUs — but the column itself doesn't apply to a gas fixture. Don't emit electric-only suffixes on a gas SKU and vice versa.
+    - Gas fixtures additionally cannot use CHM, SM, QCM, or HCHM (ceiling chain/stem mounts).
+    - Wind Guard (WG) cannot be combined with Propane Tip (PT), e-lyte (ELI), or Auto Shutoff Valve (ASV).
 
 12. **SKU code order is deterministic** regardless of click order:
     `Base + Finish + Mount + Companion + Decorative + Electric/Gas (last)`.

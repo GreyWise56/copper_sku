@@ -262,6 +262,12 @@ export function initController(opts: {
     for (const cat of DATA.categoryOrder) {
       if (!fam.accessoryGrid[cat]) continue;
       if (isCategoryHiddenByCompanion(DATA, state, cat)) continue;
+      // Ignition-specific panel hiding. The master sheet stores compliance
+      // features (ADS / TLA / shades) under the ELECTRIC column even though
+      // the column itself shouldn't appear for Gas SKUs, and vice versa.
+      // Dual-ignition fixtures keep both panels (neither check fires).
+      if (cat === "ELECTRIC" && fam.ignition === "Gas") continue;
+      if (cat === "GAS" && fam.ignition === "Electric") continue;
 
       let opts = fam.accessoryGrid[cat].filter((opt) =>
         state.baseSkus.every((sku) => opt.codes[sku] !== undefined),
