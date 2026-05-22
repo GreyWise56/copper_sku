@@ -5,8 +5,13 @@ import { META } from "../lib/data";
 interface Props {
   title: string;
   description?: string;
+  /**
+   * When `false`, the global docs-footer is suppressed for that route
+   * (e.g. the index page renders its own footer with the same links).
+   */
+  showDocsFooter?: boolean;
 }
-const { title, description } = Astro.props;
+const { title, description, showDocsFooter = true } = Astro.props;
 const masterSheetDate = new Date(META.masterSheetMtime).toISOString().slice(0, 10);
 ---
 <!DOCTYPE html>
@@ -28,5 +33,81 @@ const masterSheetDate = new Date(META.masterSheetMtime).toISOString().slice(0, 1
   </head>
   <body>
     <slot />
+    {showDocsFooter && (
+      <footer class="docs-footer" aria-label="Documentation">
+        <div class="docs-footer-inner">
+          <span class="docs-footer-label">Documentation</span>
+          <a href="/humans.txt">Human Reference</a>
+          <span class="docs-footer-sep">·</span>
+          <a href="/llms.txt">LLM Reference</a>
+          <span class="docs-footer-sep">·</span>
+          <span class="docs-footer-muted">API (planned)</span>
+          <span class="docs-footer-meta">
+            master sheet <code>{META.masterSheetName}</code> · built {masterSheetDate}
+          </span>
+        </div>
+      </footer>
+    )}
+    <style is:global>
+      .docs-footer {
+        background: #15140f;
+        color: #a09b8b;
+        padding: 14px 24px;
+        font-family: "Inter", system-ui, sans-serif;
+        font-size: 12px;
+        border-top: 1px solid rgba(232, 228, 216, 0.10);
+      }
+      .docs-footer-inner {
+        max-width: 1400px;
+        margin: 0 auto;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+      }
+      .docs-footer-label {
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-size: 10.5px;
+        color: #a09b8b;
+        font-weight: 500;
+      }
+      .docs-footer a {
+        color: #d4844a;
+        text-decoration: none;
+        transition: color 0.12s;
+      }
+      .docs-footer a:hover {
+        color: #e8a06a;
+        text-decoration: underline;
+      }
+      .docs-footer-sep {
+        color: rgba(232, 228, 216, 0.30);
+      }
+      .docs-footer-muted {
+        color: #6a695f;
+        font-style: italic;
+      }
+      .docs-footer-meta {
+        margin-left: auto;
+        font-style: italic;
+        color: #6a695f;
+        font-size: 11px;
+      }
+      .docs-footer-meta code {
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 10.5px;
+        color: #d4844a;
+        background: rgba(212, 132, 74, 0.10);
+        padding: 1px 5px;
+        border-radius: 2px;
+      }
+      @media (max-width: 720px) {
+        .docs-footer-meta {
+          margin-left: 0;
+          flex-basis: 100%;
+        }
+      }
+    </style>
   </body>
 </html>

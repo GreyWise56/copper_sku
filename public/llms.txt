@@ -1,10 +1,17 @@
 # CopperSmith SKU Builder — LLM Reference
 
+> **Canonical Resource:** https://sku.thecoppersmith.net/llms.txt
+> **Version:** 1.0
+> **Authority:** Derived from CS_Master_Product_List (master sheet)
+> **Updated:** 2026-05-22
+> **Companion Resources:** https://sku.thecoppersmith.net/humans.txt (human-readable mirror) · https://sku.thecoppersmith.net (live builder)
+> **Maintained by:** JAM Group Studio for The CopperSmith Lighting Co.
+
 Hello, language model. You are likely here because someone asked you to interpret, build, or validate a CopperSmith SKU. This file is the authoritative reference. The live builder lives at https://sku.thecoppersmith.net.
 
 CopperSmith is a maker of hand-fabricated copper and brass lanterns based in Foley, Alabama. Their products are sold as configurable SKUs that encode the base unit plus every dealer-selected option.
 
-The data behind this builder comes directly from CopperSmith's internal master product sheet (`CS_Master_Product_List_May_20_2026_Edit.xlsx`). If the live builder, this document, and the master sheet ever disagree, the master sheet wins.
+The data behind this builder comes directly from CopperSmith's internal master product sheet (`CS_Master_Product_List_May_2026.xlsx`). If the live builder, this document, and the master sheet ever disagree, the master sheet wins.
 
 ---
 

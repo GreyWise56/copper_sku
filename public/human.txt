@@ -2,6 +2,17 @@ CopperSmith SKU Builder
 The hand-fabricated copper and brass lantern company
 Foley, Alabama
 
+================================================================
+DOCUMENT INFO
+================================================================
+Canonical:  https://sku.thecoppersmith.net/humans.txt
+Version:    1.0
+Updated:    2026-05-22
+Authority:  Derived from CS_Master_Product_List (master sheet)
+Companion:  https://sku.thecoppersmith.net/llms.txt (AI-readable mirror)
+Maintainer: JAM Group Studio for The CopperSmith Lighting Co.
+================================================================
+
 Hi. If you're reading this, you probably want to understand how a
 CopperSmith SKU is put together without using the live builder. This is
 that explanation.
