@@ -1,0 +1,387 @@
+---
+import Base from "../layouts/Base.astro";
+import { META } from "../lib/data";
+const masterSheetDate = new Date(META.masterSheetMtime).toISOString().slice(0, 10);
+---
+<Base
+  title="CopperSmith SKU Builder — Workbench"
+  description="PIM-ready SKU configurator. Dense, keyboard-first, monospace output."
+>
+  <style is:global>
+    :root {
+      --bg: #f7f6f3;
+      --bg-rail: #fbfaf7;
+      --surface: #ffffff;
+      --surface-2: #f1efe9;
+      --ink: #15140f;
+      --ink-2: #5a5852;
+      --ink-3: #9a9890;
+      --line: rgba(21, 20, 15, .10);
+      --line-2: rgba(21, 20, 15, .18);
+      --copper: #b5651d;
+      --copper-2: #d4844a;
+      --copper-soft: rgba(181, 101, 29, .10);
+      --rail-bg: #15140f;
+      --rail-ink: #e8e4d8;
+      --rail-ink-2: #a09b8b;
+      --rail-line: rgba(232, 228, 216, .10);
+      --ok: #3d7a3d;
+      --r: 3px;
+      --density: 1;
+    }
+    [data-theme="dark"] {
+      --bg: #15140f;
+      --bg-rail: #1d1c16;
+      --surface: #1d1c16;
+      --surface-2: #27261e;
+      --ink: #e8e4d8;
+      --ink-2: #9a9890;
+      --ink-3: #6a695f;
+      --line: rgba(232, 228, 216, .08);
+      --line-2: rgba(232, 228, 216, .16);
+      --copper: #d4844a;
+      --copper-2: #e8a06a;
+      --copper-soft: rgba(212, 132, 74, .14);
+      --rail-bg: #0e0d09;
+      --rail-ink: #e8e4d8;
+      --rail-ink-2: #7a7870;
+      --rail-line: rgba(232, 228, 216, .08);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: var(--bg); color: var(--ink); font-family: "Inter", system-ui, sans-serif; font-weight: 400; -webkit-font-smoothing: antialiased; font-feature-settings: "cv11", "ss01"; }
+    body { min-height: 100vh; }
+    button { font-family: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+
+    /* Top bar */
+    .topbar { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; border-bottom: 1px solid var(--line); background: var(--surface); position: sticky; top: 0; z-index: 50; }
+    .topbar-left { display: flex; align-items: center; gap: 20px; }
+    .topbar-left img { height: 36px; width: auto; display: block; }
+    [data-theme="dark"] .topbar-left img { filter: invert(.92) hue-rotate(180deg) brightness(1.05); }
+    .topbar-title { font-size: 13px; color: var(--ink-2); padding-left: 14px; border-left: 1px solid var(--line); display: flex; align-items: baseline; gap: 8px; }
+    .topbar-title strong { font-family: "Cormorant Garamond", serif; font-weight: 500; color: var(--ink); font-size: 17px; letter-spacing: .005em; }
+    .topbar-title em { font-style: italic; font-family: "Cormorant Garamond", serif; color: var(--copper); font-size: 15px; font-weight: 500; }
+    .topbar-title .accent { width: 6px; height: 6px; border-radius: 50%; background: var(--copper); }
+    .topbar-actions { display: flex; align-items: center; gap: 2px; }
+    .iconbtn { padding: 6px 12px; font-size: 12.5px; color: var(--ink-2); border-radius: var(--r); display: inline-flex; align-items: center; gap: 6px; transition: background .12s, color .12s; font-family: "Inter", sans-serif; letter-spacing: 0; text-decoration: none; }
+    .iconbtn:hover { background: var(--surface-2); color: var(--ink); }
+
+    /* Step ribbon */
+    .ribbon { display: flex; align-items: center; gap: 0; padding: 14px 20px; background: var(--bg-rail); border-bottom: 1px solid var(--line); overflow-x: auto; }
+    .ribbon-step { display: flex; align-items: center; gap: 10px; padding: 6px 16px 6px 0; font-family: "Inter", sans-serif; font-size: 12.5px; color: var(--ink-3); position: relative; flex-shrink: 0; }
+    .ribbon-step + .ribbon-step { padding-left: 16px; border-left: 1px solid var(--line); }
+    .ribbon-step .n { font-family: "Cormorant Garamond", serif; font-style: italic; font-size: 13px; color: var(--ink-3); width: 20px; height: 20px; border: 1px solid var(--line-2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 500; line-height: 1; }
+    .ribbon-step.done .n { background: var(--copper); color: #fff; border-color: var(--copper); }
+    .ribbon-step.active .n { border-color: var(--copper); color: var(--copper); }
+    .ribbon-step .lbl { font-weight: 500; letter-spacing: .005em; color: var(--ink-2); }
+    .ribbon-step.done .lbl, .ribbon-step.active .lbl { color: var(--ink); }
+    .ribbon-step .val { color: var(--ink-3); font-family: "JetBrains Mono", monospace; font-size: 11.5px; letter-spacing: .02em; }
+    .ribbon-step.done .val { color: var(--copper); }
+
+    /* Main layout */
+    .shell { display: grid; grid-template-columns: 1fr 460px; min-height: calc(100vh - 64px - 49px); }
+    .pane { padding: 24px 28px; overflow-y: auto; }
+    .rail { background: var(--rail-bg); color: var(--rail-ink); border-left: 1px solid var(--line); position: sticky; top: 113px; height: calc(100vh - 113px); display: flex; flex-direction: column; }
+
+    /* Sections */
+    .section { margin-bottom: 36px; }
+    .section.disabled { opacity: .35; pointer-events: none; }
+    .section-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
+    .section-head .num { font-family: "Cormorant Garamond", serif; font-style: italic; font-size: 20px; color: var(--copper); line-height: 1; font-weight: 500; flex-shrink: 0; white-space: nowrap; display: inline-flex; align-items: center; gap: 10px; }
+    .section-head .num::before { content: ""; display: inline-block; width: 18px; height: 1px; background: var(--copper); flex-shrink: 0; }
+    .section-head h2 { font-family: "Cormorant Garamond", serif; font-size: 22px; font-weight: 500; color: var(--ink); letter-spacing: -.005em; line-height: 1.1; flex-shrink: 1; min-width: 0; }
+    .section-head .aside { font-family: "Inter", sans-serif; font-size: 11.5px; color: var(--ink-3); font-style: italic; margin-left: auto; letter-spacing: 0; flex-shrink: 0; }
+    .section-head .aside em { font-style: normal; color: var(--copper); font-weight: 500; }
+    .section-hint { font-size: 13.5px; line-height: 1.6; color: var(--ink-2); margin-bottom: 16px; max-width: 64ch; }
+    .section-hint code { font-family: "JetBrains Mono", monospace; font-size: 11.5px; color: var(--copper); background: var(--copper-soft); padding: 1px 5px; border-radius: 2px; }
+
+    /* Family select */
+    .family-row { display: flex; gap: 10px; align-items: center; max-width: 560px; }
+    .family-row select { flex: 1; padding: 9px 32px 9px 12px; background: var(--surface); border: 1px solid var(--line-2); border-radius: var(--r); font-family: "Inter", sans-serif; font-size: 13px; color: var(--ink); appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23b5651d' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+    .family-row select:focus, .family-row select:hover { outline: none; border-color: var(--copper); }
+    .family-meta { font-family: "Inter", sans-serif; font-size: 12px; color: var(--ink-3); font-style: italic; letter-spacing: 0; }
+    .family-meta strong { font-family: "JetBrains Mono", monospace; font-style: normal; font-size: 11.5px; letter-spacing: .02em; color: var(--copper); font-weight: 500; }
+
+    /* Token pills (base SKUs) */
+    .tokens { display: flex; flex-wrap: wrap; gap: 6px; }
+    .token { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px 6px 8px; background: var(--surface); border: 1px solid var(--line-2); border-radius: var(--r); cursor: pointer; font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--ink); transition: all .12s; }
+    .token:hover { border-color: var(--copper-2); background: var(--surface-2); }
+    .token.on { border-color: var(--copper); background: var(--copper-soft); color: var(--copper); }
+    .token .check { width: 11px; height: 11px; border: 1px solid var(--line-2); border-radius: 2px; flex-shrink: 0; position: relative; }
+    .token.on .check { background: var(--copper); border-color: var(--copper); }
+    .token.on .check::after { content: ""; position: absolute; left: 2px; top: 1px; width: 5px; height: 3px; border-left: 1.4px solid #fff; border-bottom: 1.4px solid #fff; transform: rotate(-45deg); }
+    .token .b-label { font-family: "Inter", sans-serif; color: var(--ink-2); font-size: 12px; font-weight: 400; }
+    .token.on .b-label { color: var(--ink); }
+    .token .b-code { font-weight: 500; }
+
+    /* Finish chips */
+    .finish-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .finish-chip { display: inline-flex; align-items: center; gap: 10px; padding: 10px 14px 10px 10px; background: var(--surface); border: 1px solid var(--line-2); border-radius: var(--r); cursor: pointer; transition: all .12s; min-width: 170px; }
+    .finish-chip:hover { border-color: var(--copper-2); }
+    .finish-chip.on { border-color: var(--copper); background: var(--copper-soft); }
+    .finish-swatch { width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .1); background-image: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, .35), transparent 60%); }
+    .finish-meta { display: flex; flex-direction: column; gap: 1px; }
+    .finish-name { font-size: 12.5px; font-weight: 500; color: var(--ink); line-height: 1.1; }
+    .finish-code { font-family: "JetBrains Mono", monospace; font-size: 10.5px; color: var(--ink-3); letter-spacing: .04em; }
+    .finish-chip.on .finish-code { color: var(--copper); }
+    .finish-default { font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin-left: auto; }
+
+    /* Brass note */
+    .brass-note { padding: 12px 14px; background: var(--surface); border: 1px solid var(--line-2); border-left: 2px solid var(--copper); font-size: 12.5px; color: var(--ink-2); line-height: 1.55; max-width: 600px; border-radius: 0 var(--r) var(--r) 0; }
+    .brass-note strong { color: var(--ink); font-weight: 600; }
+
+    /* Accessory groups */
+    .acc-group { margin-bottom: 26px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px 16px; }
+    .acc-group-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .acc-group-head .dot { width: 6px; height: 6px; border-radius: 50%; }
+    .acc-group-head .gtitle { font-family: "Cormorant Garamond", serif; font-size: 18px; font-weight: 500; color: var(--ink); letter-spacing: .005em; white-space: nowrap; }
+    .acc-group-head .gcount { font-family: "JetBrains Mono", monospace; font-size: 10.5px; color: var(--ink-3); letter-spacing: .04em; margin-right: auto; }
+    .dot-wall { background: #3a6b3a; } .dot-ceil { background: #3a3d7a; } .dot-post { background: #7a4a2a; } .dot-bilt { background: #6a3a7a; } .dot-dec { background: #a0734a; } .dot-parts { background: #888; } .dot-gas { background: #7a5a2a; } .dot-electric { background: #3a3d7a; }
+
+    .acc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 5px; }
+    .acc-item { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 8px 10px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r); cursor: pointer; transition: all .12s; font-family: "Inter", sans-serif; text-align: left; position: relative; }
+    .acc-item:hover { border-color: var(--copper-2); background: var(--surface); }
+    .acc-item.on { border-color: var(--copper); background: var(--copper-soft); }
+    .acc-item.on::after { content: "✓"; position: absolute; top: 4px; right: 6px; font-size: 10px; color: var(--copper); font-weight: 700; font-family: "JetBrains Mono", monospace; }
+    .acc-item .a-label { font-size: 11.5px; color: var(--ink); line-height: 1.3; padding-right: 14px; }
+    .acc-item.on .a-label { font-weight: 500; }
+    .acc-item .a-code { font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--copper); background: rgba(181, 101, 29, .10); padding: 1px 5px; border-radius: 2px; letter-spacing: .04em; }
+
+    .biltmore-banner { margin-bottom: 14px; padding: 10px 14px; background: rgba(106, 58, 122, .07); border: 1px solid rgba(106, 58, 122, .22); border-left: 2px solid #6a3a7a; font-size: 12px; color: var(--ink-2); line-height: 1.55; max-width: 680px; border-radius: 0 var(--r) var(--r) 0; }
+    .biltmore-banner strong { color: #6a3a7a; font-weight: 600; letter-spacing: .02em; }
+    [data-theme="dark"] .biltmore-banner strong { color: #c8a3d6; }
+
+    /* Rail */
+    .rail-head { padding: 18px 20px 14px; border-bottom: 1px solid var(--rail-line); }
+    .rail-label { font-family: "Inter", sans-serif; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--rail-ink-2); margin-bottom: 8px; display: flex; justify-content: space-between; font-weight: 500; }
+    .rail-count { font-family: "Cormorant Garamond", serif; font-size: 48px; font-weight: 500; color: var(--copper); line-height: 1; letter-spacing: -.01em; }
+    .rail-count-sub { margin-left: 10px; font-family: "Inter", sans-serif; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--rail-ink-2); font-weight: 500; }
+    .rail-path { margin-top: 12px; font-size: 12px; line-height: 1.55; color: var(--rail-ink-2); font-style: italic; }
+    .rail-path code { font-family: "JetBrains Mono", monospace; font-size: 10.5px; color: var(--copper-2); background: rgba(212, 132, 74, .10); padding: 1px 5px; border-radius: 2px; font-style: normal; }
+
+    .rail-controls { padding: 10px 20px; border-bottom: 1px solid var(--rail-line); display: flex; gap: 6px; align-items: center; background: rgba(0, 0, 0, .15); }
+    [data-theme="dark"] .rail-controls { background: rgba(255, 255, 255, .02); }
+    .rail-controls .search { flex: 1; position: relative; }
+    .rail-controls .search input { width: 100%; padding: 6px 10px 6px 26px; background: rgba(232, 228, 216, .06); border: 1px solid var(--rail-line); border-radius: var(--r); font-size: 12px; color: var(--rail-ink); font-family: "JetBrains Mono", monospace; }
+    .rail-controls .search input::placeholder { color: var(--rail-ink-2); }
+    .rail-controls .search input:focus { outline: none; border-color: var(--copper); }
+    .rail-controls .search::before { content: "⌕"; position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--rail-ink-2); }
+    .rail-controls select { padding: 6px 22px 6px 10px; background: rgba(232, 228, 216, .06); border: 1px solid var(--rail-line); border-radius: var(--r); font-size: 12px; color: var(--rail-ink); font-family: "Inter", sans-serif; letter-spacing: 0; appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23d4844a' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; }
+
+    .rail-list { flex: 1; overflow-y: auto; padding: 6px 0; min-height: 0; font-family: "JetBrains Mono", monospace; }
+    .rail-empty { padding: 32px 20px; text-align: center; font-size: 12.5px; color: var(--rail-ink-2); font-family: "Cormorant Garamond", serif; font-style: italic; letter-spacing: 0; }
+    .sku-row { display: flex; align-items: center; gap: 8px; padding: 5px 20px; border-bottom: 1px solid var(--rail-line); transition: background .12s; }
+    .sku-row:hover { background: rgba(232, 228, 216, .04); }
+    .sku-row-num { font-size: 9.5px; color: var(--rail-ink-2); min-width: 30px; text-align: right; }
+    .sku-row-num::before { content: "#"; opacity: .55; }
+    .sku-row-val { flex: 1; font-size: 11.5px; color: var(--copper-2); letter-spacing: .02em; word-break: break-all; line-height: 1.4; }
+    .sku-row-val mark { background: rgba(212, 132, 74, .28); color: var(--rail-ink); padding: 0 2px; border-radius: 1px; }
+    .sku-row-copy { padding: 3px 6px; border-radius: 2px; color: var(--rail-ink-2); font-size: 11px; opacity: 0; transition: opacity .12s, background .12s, color .12s; font-family: "JetBrains Mono", monospace; }
+    .sku-row:hover .sku-row-copy { opacity: 1; }
+    .sku-row-copy:hover { background: rgba(232, 228, 216, .10); color: var(--rail-ink); }
+    .sku-row-copy.ok { color: #9ad29a; opacity: 1; }
+
+    .rail-foot { padding: 12px 20px 16px; border-top: 1px solid var(--rail-line); display: grid; gap: 6px; background: rgba(0, 0, 0, .15); }
+    [data-theme="dark"] .rail-foot { background: rgba(255, 255, 255, .02); }
+    .rf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .btn { padding: 9px 12px; font-family: "Inter", sans-serif; font-size: 12.5px; letter-spacing: .01em; border-radius: var(--r); font-weight: 500; transition: all .12s; border: 1px solid transparent; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-primary { background: var(--copper); color: #fff; }
+    .btn-primary:hover { background: var(--copper-2); }
+    .btn-primary:disabled { background: rgba(232, 228, 216, .08); color: var(--rail-ink-2); cursor: not-allowed; }
+    .btn-primary.ok { background: #3d7a3d; }
+    .btn-ghost { background: transparent; color: var(--copper-2); border-color: rgba(212, 132, 74, .32); }
+    .btn-ghost:hover { background: var(--copper-soft); }
+    .btn-ghost:disabled { color: var(--rail-ink-2); border-color: var(--rail-line); cursor: not-allowed; }
+    .btn-text { font-family: "Inter", sans-serif; font-size: 11.5px; color: var(--rail-ink-2); padding: 6px; letter-spacing: .01em; text-align: center; font-style: italic; }
+    .btn-text:hover { color: var(--copper-2); }
+    .rail-contact { display: block; margin-top: 4px; padding: 8px 6px 2px; text-align: center; font-family: "Cormorant Garamond", serif; font-style: italic; font-size: 12.5px; color: var(--rail-ink-2); text-decoration: none; border-top: 1px solid var(--rail-line); transition: color .12s; }
+    .rail-contact span { font-family: "JetBrains Mono", monospace; font-style: normal; font-size: 11px; color: var(--copper-2); letter-spacing: .01em; margin-left: 4px; }
+    .rail-contact:hover { color: var(--rail-ink); }
+
+    /* Empty notice */
+    .empty-notice { padding: 13px 16px; background: var(--surface); border: 1px dashed var(--line-2); border-radius: var(--r); font-size: 13px; color: var(--ink-3); font-style: italic; max-width: 600px; }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%) translateY(20px); padding: 9px 20px; background: var(--ink); color: var(--bg); border-radius: 99px; font-family: "Inter", sans-serif; font-size: 12.5px; letter-spacing: .01em; opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none; z-index: 100; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 1100px) { .shell { grid-template-columns: 1fr; } .rail { position: relative; height: auto; top: auto; border-left: none; border-top: 1px solid var(--line); } }
+    @media (max-width: 720px) { .pane { padding: 18px; } .ribbon { padding: 10px 18px; } }
+  </style>
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <img src="/logo.webp" alt="The Coppersmith" />
+      <div class="topbar-title"><span class="accent"></span><strong>SKU&nbsp;Builder</strong> <em>Workbench</em></div>
+    </div>
+    <div class="topbar-actions">
+      <a class="iconbtn" href="/">← Directions</a>
+      <a class="iconbtn" href="/showroom">Showroom</a>
+      <button class="iconbtn" id="themeToggle"><span id="themeIcon">◐</span> Theme</button>
+    </div>
+  </header>
+
+  <div class="ribbon" id="ribbon">
+    <div class="ribbon-step active" data-step="1"><span class="n">I</span><span class="lbl">Family</span><span class="val" data-slot="family">—</span></div>
+    <div class="ribbon-step" data-step="2"><span class="n">II</span><span class="lbl">Base SKU</span><span class="val" data-slot="base">—</span></div>
+    <div class="ribbon-step" data-step="3"><span class="n">III</span><span class="lbl">Finish</span><span class="val" data-slot="finish">—</span></div>
+    <div class="ribbon-step" data-step="4"><span class="n">IV</span><span class="lbl">Accessories</span><span class="val" data-slot="acc">—</span></div>
+  </div>
+
+  <div class="shell">
+    <section class="pane">
+      <div class="section" id="step1">
+        <div class="section-head"><span class="num">I</span><h2>Family &amp; Ignition</h2><span class="aside">organizational only</span></div>
+        <p class="section-hint">Parent SKU (<code>AS-E</code>, <code>AS-G</code>, etc.) is the catalog grouping — never appears in the buildable string. The SKU begins at step II.</p>
+        <div class="family-row">
+          <select id="parentSku" aria-label="Product family">
+            <option value="">— Select a family —</option>
+          </select>
+          <span class="family-meta" id="familyMeta"><strong>{META.familyCount}</strong> families loaded</span>
+        </div>
+      </div>
+
+      <div class="section disabled" id="step2">
+        <div class="section-head"><span class="num">II</span><h2>Base SKU</h2><span class="aside">multi-select · <em>the SKU begins here</em></span></div>
+        <p class="section-hint">Multi-select to fan out across sizes. Accessory codes vary <em>per</em> base SKU within a family.</p>
+        <div class="tokens" id="baseGrid"></div>
+      </div>
+
+      <div class="section disabled" id="step3">
+        <div class="section-head"><span class="num">III</span><h2>Finish</h2><span class="aside" id="finishAside">default · Antique Copper (no suffix)</span></div>
+        <div class="brass-note" id="brassNote" style="display:none">
+          <strong>Brass-only family.</strong> AOB ships exclusively in solid brass — the "B" in the SKU already encodes brass. No finish picker, no finish suffix.
+        </div>
+        <div class="finish-row" id="finishGrid"></div>
+      </div>
+
+      <div class="section disabled" id="step4">
+        <div class="section-head"><span class="num">IV</span><h2>Mounts &amp; Accessories</h2><span class="aside">filtered to selected base SKU(s)</span></div>
+        <div id="accessoriesWrap"><div class="empty-notice">Select a family and base SKU to load compatible accessories.</div></div>
+      </div>
+    </section>
+
+    <aside class="rail">
+      <div class="rail-head">
+        <div class="rail-label"><span>Generated SKUs</span><span id="genStatus" style="font-family:'Inter',sans-serif;font-size:10.5px;color:var(--rail-ink-2);letter-spacing:.08em;font-style:italic;text-transform:none;">idle</span></div>
+        <div><span class="rail-count" id="skuCount">0</span><span class="rail-count-sub">combinations</span></div>
+        <div class="rail-path" id="skuPath">Awaiting selection.</div>
+      </div>
+
+      <div class="rail-controls">
+        <div class="search"><input type="text" id="searchInput" placeholder="Filter SKUs…" /></div>
+        <select id="sortSelect">
+          <option value="default">Build order</option>
+          <option value="az">A → Z</option>
+          <option value="za">Z → A</option>
+          <option value="len">By length</option>
+        </select>
+      </div>
+
+      <div class="rail-list" id="skuList">
+        <div class="rail-empty" id="skuEmpty">No SKUs yet — pick a family to begin.</div>
+      </div>
+
+      <div class="rail-foot">
+        <button class="btn btn-primary" id="copyAllBtn" disabled>Copy all SKUs</button>
+        <div class="rf-row">
+          <button class="btn btn-ghost" id="exportBtn" disabled>Export CSV</button>
+          <button class="btn btn-ghost" id="shareBtn" disabled>Share link</button>
+        </div>
+        <button class="btn-text" id="resetBtn">Reset all selections</button>
+        <a class="rail-contact" href="mailto:tech@thecoppersmith.net?subject=SKU%20Builder%20question">Questions? <span>tech@thecoppersmith.net</span></a>
+      </div>
+    </aside>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    import { initController } from "../lib/controller";
+
+    initController({
+      ids: {
+        parentSel: "parentSku",
+        baseGrid: "baseGrid",
+        finishGrid: "finishGrid",
+        finishAside: "finishAside",
+        brassNote: "brassNote",
+        accessoriesWrap: "accessoriesWrap",
+        steps: ["step1", "step2", "step3", "step4"],
+        skuCount: "skuCount",
+        skuPath: "skuPath",
+        skuList: "skuList",
+        skuEmpty: "skuEmpty",
+        searchInput: "searchInput",
+        sortSelect: "sortSelect",
+        copyAllBtn: "copyAllBtn",
+        exportBtn: "exportBtn",
+        shareBtn: "shareBtn",
+        resetBtn: "resetBtn",
+        toast: "toast",
+      },
+      classes: {
+        on: "on",
+        disabled: "disabled",
+        baseTile: "token",
+        finishTile: "finish-chip",
+        accItem: "acc-item",
+        biltmoreBanner: "biltmore-banner",
+        accGroup: "acc-group",
+        accGroupHead: "acc-group-head",
+        accGrid: "acc-grid",
+      },
+    });
+
+    // Step ribbon — observe state and update slots
+    function updateRibbon() {
+      const ribbon = document.getElementById("ribbon");
+      if (!ribbon) return;
+      const steps = ribbon.querySelectorAll(".ribbon-step");
+      const familyVal = (document.getElementById("parentSku") as HTMLSelectElement)?.value;
+      const slot1 = ribbon.querySelector('[data-slot="family"]');
+      const slot2 = ribbon.querySelector('[data-slot="base"]');
+      const slot3 = ribbon.querySelector('[data-slot="finish"]');
+      const slot4 = ribbon.querySelector('[data-slot="acc"]');
+      if (slot1) slot1.textContent = familyVal || "—";
+      const selectedBases = document.querySelectorAll(".token.on");
+      if (slot2) slot2.textContent = selectedBases.length ? selectedBases.length + " picked" : "—";
+      const selectedFinishes = document.querySelectorAll(".finish-chip.on");
+      const brassVisible = (document.getElementById("brassNote") as HTMLElement)?.style.display !== "none";
+      if (slot3) slot3.textContent = brassVisible ? "brass" : selectedFinishes.length ? selectedFinishes.length + " picked" : "default";
+      const selectedAcc = document.querySelectorAll(".acc-item.on");
+      if (slot4) slot4.textContent = selectedAcc.length ? selectedAcc.length + " picked" : "—";
+      steps[0].classList.toggle("done", !!familyVal);
+      steps[1].classList.toggle("done", selectedBases.length > 0);
+      steps[1].classList.toggle("active", !!familyVal && !selectedBases.length);
+      steps[2].classList.toggle("done", selectedFinishes.length > 0 || brassVisible);
+      steps[3].classList.toggle("done", selectedAcc.length > 0);
+    }
+    document.querySelector(".pane")?.addEventListener("click", () => setTimeout(updateRibbon, 30));
+    document.getElementById("parentSku")?.addEventListener("change", () => setTimeout(updateRibbon, 30));
+    document.getElementById("resetBtn")?.addEventListener("click", () => setTimeout(updateRibbon, 30));
+    setTimeout(updateRibbon, 200);
+
+    // Generation status indicator
+    const genStatus = document.getElementById("genStatus");
+    const skuCount = document.getElementById("skuCount");
+    if (skuCount && genStatus) {
+      const obs = new MutationObserver(() => {
+        const n = parseInt((skuCount.textContent || "0").replace(/,/g, ""), 10) || 0;
+        genStatus.textContent = n ? "Ready" : "Idle";
+        (genStatus as HTMLElement).style.color = n ? "var(--copper-2)" : "var(--rail-ink-2)";
+      });
+      obs.observe(skuCount, { childList: true, characterData: true, subtree: true });
+    }
+
+    // Theme toggle
+    const themeBtn = document.getElementById("themeToggle");
+    const themeIcon = document.getElementById("themeIcon");
+    function applyTheme(t: string) {
+      document.body.setAttribute("data-theme", t);
+      if (themeIcon) themeIcon.textContent = t === "dark" ? "◑" : "◐";
+      try { localStorage.setItem("cs-theme", t); } catch (e) {}
+    }
+    try { applyTheme(localStorage.getItem("cs-theme") || "light"); } catch (e) {}
+    if (themeBtn) themeBtn.onclick = () => applyTheme(document.body.getAttribute("data-theme") === "dark" ? "light" : "dark");
+  </script>
+</Base>

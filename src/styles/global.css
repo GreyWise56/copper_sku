@@ -1,0 +1,14 @@
+/* Copper design tokens — exposed as CSS custom properties.
+   Each page (workbench, showroom) extends these with its own variant tokens
+   inside `[data-theme]` selectors. */
+:root {
+  --color-copper:         #b5651d;
+  --color-copper-light:   #d4844a;
+  --color-copper-dark:    #8B4513;
+  --color-copper-pale:    #f5e6d3;
+  --color-copper-surface: #faf4ed;
+  --color-biltmore:       #6a3a7a;
+  --color-ink:            #1a1108;
+  --color-ink-mid:        #5c4a35;
+  --color-ink-light:      #9b8068;
+}

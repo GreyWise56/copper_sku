@@ -1,0 +1,257 @@
+CopperSmith SKU Builder
+The hand-fabricated copper and brass lantern company
+Foley, Alabama
+
+Hi. If you're reading this, you probably want to understand how a
+CopperSmith SKU is put together without using the live builder. This is
+that explanation.
+
+The live tool is at https://sku.thecoppersmith.net — use it if you can,
+it does all this work for you. But if you're old school or you're
+trying to read a SKU on a packing slip and figure out what it means,
+this is the formula.
+
+
+================================================================
+THE FORMULA
+================================================================
+
+A buildable SKU is the base SKU followed by a series of option codes,
+joined with hyphens, in this order:
+
+    Base SKU
+      + Finish
+      + Mount
+      + Companion (only if the mount needs one)
+      + Decorative
+      + Electric or Gas options (last)
+
+Every segment past Base SKU is optional. The default finish (Antique
+Copper) doesn't add a suffix — it's just absent.
+
+
+================================================================
+THE PIECES
+================================================================
+
+1. PARENT SKU (e.g. AS-E)
+   This is NOT in the final SKU. It's how products are grouped under
+   catalog listings. If you see "AS-E" written anywhere, it means "the
+   Adams Street Electric line." It's not a thing you can order.
+
+2. BASE SKU (e.g. AS41E)
+   This is where the actual orderable SKU begins. Three parts:
+     - Family code (e.g. AS for Adams Street)
+     - Size in inches (e.g. 41)
+     - Ignition type (E for Electric, G for Gas)
+
+   Every base SKU ships as a wall-mounted fixture with a standard
+   backplate by default. The base SKU alone is a complete, orderable
+   product.
+
+3. FINISH (e.g. -BLK)
+   Five options:
+     (none)   Antique Copper — the default, no suffix added
+     -BLK     Matte Black
+     -GRAY    Graphite Gray
+     -BRZ     Oil Rubbed Bronze
+     -CLEAR   Clear Coat (white in the UI swatch)
+
+   The AOB family (Biltmore Aurora Brass) is brass only — its SKUs
+   never get a finish suffix because the "B" already encodes brass.
+
+4. MOUNT (e.g. -WY, -TS3, -CY05, -PF1)
+   You pick options from ONE mount category per SKU. The categories
+   are mutually exclusive on a single SKU:
+
+     Wall Mount:             Wall Yoke, Gooseneck Plain, Gooseneck Scroll,
+                             Grand Harbor 12", Grand Harbor 17",
+                             Estate Extension, the three Moustaches
+                             (Classic / Dual Scroll / Fancy)
+
+     Wall Mount Accessories: Top Scroll, Top Scroll Wide,
+                             Bottom Scroll, Bottom Scroll Wide,
+                             Reverse Bottom Scroll,
+                             Farm House Hook, Bottom Farm House Hook,
+                             Moneo Top Hook
+
+     Ceiling & Hanging:      Classic Yoke, Pendant Yoke,
+                             Contemporary Yoke, Stem Mount,
+                             Chain Mount, Quartet Chain Mount,
+                             Heavy Chain Mount, Heavy Slope Ceiling Mount,
+                             Ladder Rest
+
+     Post & Pier:            Post Fitter, Grand Post Fitter,
+                             Pier Mount, Grand Pier Mount,
+                             Copper Pier Mount,
+                             Direct Burial Post Adapter,
+                             Lamp Posts (6/8/10 foot),
+                             Post Ladder Rest
+
+   Important rule: standard Wall Mount Accessories (Top Scroll,
+   Bottom Scroll, hooks, etc.) attach to the standard backplate.
+   So they're available ONLY when no non-standard Wall Mount is
+   selected. Pick a Gooseneck or Grand Harbor and the Wall Mount
+   Accessories disappear, and the other way around.
+
+5. COMPANION (e.g. -CY05 paired with -EE1)
+   Some mount options require a partner because they don't stand
+   alone on the fixture:
+
+     Estate Extension     requires a Ceiling & Hanging mount.
+                          Any ceiling option available for the
+                          selected base SKU is valid.
+                          Output: AS41E-EE1-CY05
+
+     Grand Harbor 12"     requires a Post Fitter (PF) or
+       and Grand Harbor 17"   Grand Post Fitter (GPF).
+                              Output: AS41E-GH1-PF1
+
+   When you select one of these, the rest of its mount category
+   hides and a companion picker appears with the right options.
+
+6. DECORATIVE OPTIONS (e.g. -LTS, -BBR)
+   Add-ons that sit on top of the chosen mount:
+     London Top, London Bottom, Fluted Top,
+     Solid Copper Top Panels, Fleur De Lis Finial,
+     Braided Brass Ring, Coach House Bars
+
+   You can combine London Top with London Bottom on the same SKU.
+   See the Top + Bottom rule below.
+
+7. ELECTRIC OR GAS SPECIFIC (goes at the END of the SKU)
+   Electric options:
+     Adhara Dark Sky (ADS), Turtle Friendly (TLA),
+     Frosted Shade (HSI1), Sanded Shade (HSI2),
+     Cylinder Hurricane Shade (CSHI)
+   Gas options:
+     Propane Tip (PT or SPTS), Gas Pressure Regulator (GPR),
+     e-lyte (ELI), Auto Shutoff Valve (ASV),
+     Wind Guard (WGS or WGL)
+
+
+================================================================
+THE TOP + BOTTOM RULE
+================================================================
+
+In Wall Mount Accessories and Decorative Options, accessories are
+classified as "top" or "bottom." One top can combine with one bottom
+on a single SKU. Two tops, or two bottoms, fork into separate SKUs.
+
+Tops in Wall Mount Accessories:
+  Top Scroll, Top Scroll Wide, Farm House Hook, Moneo Top Hook
+Bottoms in Wall Mount Accessories:
+  Bottom Scroll, Bottom Scroll Wide, Reverse Bottom Scroll,
+  Bottom Farm House Hook
+
+Tops in Decorative Options:
+  London Top, Fluted Top, Solid Copper Top Panels
+Bottoms in Decorative Options:
+  London Bottom
+
+Examples:
+  Top Scroll + Bottom Scroll    = AS41E-TS3-BS1     (one SKU)
+  Top Scroll + Top Scroll Wide  = AS41E-TS3  AND  AS41E-TSW3   (two SKUs)
+  Farm House Hook + BFH         = AS41E-FH3-BFH2   (FH counts as a top)
+  London Top + London Bottom    = AS41E-LTS-LBS    (one SKU)
+
+
+================================================================
+WORKED EXAMPLES
+================================================================
+
+  AS41E
+    Adams Street, 41 inches, Electric. Base unit, antique copper,
+    standard backplate. Wall mounted. Complete product.
+
+  AS41E-BLK
+    Same as above but matte black finish.
+
+  AS41G-BLK-TS3
+    Adams Street 41" Gas, matte black, with a Top Scroll (size TS3).
+
+  AS43G-BLK-TS11
+    Same product line, larger size (43"), Gas. With Top Scroll —
+    notice the code is TS11, not TS3, because accessory codes
+    differ per base SKU.
+
+  AS41E-EE1-CY05
+    Adams Street 41" Electric with Estate Extension wall mount
+    paired with Classic Yoke as the required ceiling companion.
+
+  AS41E-GH1-PF1
+    Adams Street 41" Electric with Grand Harbor 12" wall mount
+    paired with Post Fitter as the required post-fitter companion.
+
+  AS41G-BLK-TS3-LTS-ASV
+    Adams Street 41" Gas, matte black, Top Scroll, London Top,
+    Auto Shutoff Valve. Note the gas option (ASV) comes last.
+
+  AH22E-BMSM
+    Biltmore Antler Hill 22" Electric with Biltmore Stem Mount.
+    Biltmore lines use BM-prefixed hardware (BMTS, BMCM, BMPF, BMPM,
+    BMY, BMCHM, BMSM, BMCPM) instead of the standard codes.
+
+  AOB28E
+    Biltmore Aurora Brass 28" Electric. No finish suffix because
+    AOB is brass-only.
+
+
+================================================================
+THINGS THAT CONFUSE PEOPLE
+================================================================
+
+* The accessory CODES are different across sizes within the same
+  family. A Top Scroll on AS41 is TS3, on AS43 is TS11. There's no
+  universal "Top Scroll = TS" — the code depends on the base SKU
+  you're attaching it to.
+
+* The PARENT SKU never appears in the buildable SKU. If you see
+  AS-E-AS41E somewhere, that's wrong. It's just AS41E.
+
+* Biltmore products use different mount hardware from the standard
+  collections. You can't put a regular Wall Yoke on a Biltmore
+  fixture. Biltmore lines have BMTS, BMCM, BMPF, BMPM, BMY, BMCHM,
+  BMSM, BMCPM. The Biltmore Stem Mount code is BMSM (not BSSM).
+
+* Wall Mount and Wall Mount Accessories are MUTUALLY EXCLUSIVE.
+  Pick a Gooseneck and you lose access to the Top Scroll. Pick a
+  Top Scroll and you lose access to the Gooseneck. They attach to
+  the same place on the fixture.
+
+* Estate Extension is not a complete mount on its own. It always
+  needs a ceiling/hanging companion appended to the SKU.
+
+* Grand Harbor 12" and Grand Harbor 17" are not complete mounts
+  on their own. They always need a Post Fitter or Grand Post
+  Fitter appended to the SKU.
+
+* The AOB family is the only brass-only Biltmore line. AO (without
+  the B) is the copper Aurora, and it takes finishes like everything
+  else.
+
+
+================================================================
+WHERE THE TRUTH LIVES
+================================================================
+
+The authoritative source for every accessory code on every base SKU
+is CopperSmith's master product sheet (CS_Master_Product_List).
+Every base SKU is a row, every accessory is a column. The cell at
+their intersection is the exact code.
+
+If this document and the live builder ever disagree with the master
+sheet, the master sheet is right.
+
+
+================================================================
+CONTACT
+================================================================
+
+The CopperSmith Lighting Co.
+Foley, Alabama
+Web:     https://thecoppersmith.net
+Builder: https://sku.thecoppersmith.net
+
+Built and maintained by JAM Group Studio.
+Questions: eric@jamgroupstudio.com

@@ -1,0 +1,357 @@
+---
+import Base from "../layouts/Base.astro";
+import { META } from "../lib/data";
+---
+<Base
+  title="CopperSmith SKU Builder — Showroom"
+  description="Branded SKU configurator for retailers. Heritage typography, generous spacing, large finish swatches."
+>
+  <style is:global>
+    :root {
+      --bg: #f6f1e6;
+      --bg-2: #efe9da;
+      --surface: #fffdf8;
+      --surface-2: #faf4ea;
+      --ink: #1a1208;
+      --ink-2: #5a4a35;
+      --ink-3: #9a886c;
+      --line: rgba(26, 18, 8, .10);
+      --line-2: rgba(26, 18, 8, .18);
+      --copper: #b5651d;
+      --copper-2: #d4844a;
+      --copper-deep: #8B4513;
+      --copper-soft: #f5e6d3;
+      --biltmore: #6a3a7a;
+      --ok: #5d7a4a;
+      --r: 4px;
+      --r-lg: 8px;
+      --density: 1;
+    }
+    [data-theme="dark"] {
+      --bg: #1a1208;
+      --bg-2: #221a0e;
+      --surface: #251c10;
+      --surface-2: #2e2415;
+      --ink: #f5e6d3;
+      --ink-2: #c4ad8c;
+      --ink-3: #8a755a;
+      --line: rgba(245, 230, 211, .10);
+      --line-2: rgba(245, 230, 211, .18);
+      --copper: #d4844a;
+      --copper-2: #e8a06a;
+      --copper-deep: #b5651d;
+      --copper-soft: rgba(212, 132, 74, .14);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: var(--bg); color: var(--ink); font-family: "Inter", system-ui, sans-serif; font-weight: 400; -webkit-font-smoothing: antialiased; }
+    body { min-height: 100vh; }
+    button { font-family: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+
+    .app { display: grid; grid-template-rows: auto 1fr; min-height: 100vh; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; padding: 20px 40px; border-bottom: 1px solid var(--line); background: var(--surface); position: sticky; top: 0; z-index: 50; backdrop-filter: blur(6px); }
+    .topbar-left { display: flex; align-items: center; gap: 24px; }
+    .topbar-left img { height: 48px; width: auto; display: block; }
+    [data-theme="dark"] .topbar-left img { filter: invert(.92) hue-rotate(180deg) brightness(1.05); }
+    .topbar-meta { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-3); padding-left: 24px; border-left: 1px solid var(--line); }
+    .topbar-meta em { font-style: normal; color: var(--copper); }
+    .topbar-actions { display: flex; align-items: center; gap: 6px; }
+    .iconbtn { padding: 8px 12px; border-radius: var(--r); font-size: 12px; letter-spacing: .06em; color: var(--ink-2); display: inline-flex; align-items: center; gap: 6px; transition: background .15s, color .15s; text-decoration: none; }
+    .iconbtn:hover { background: var(--copper-soft); color: var(--copper-deep); }
+
+    .main { display: grid; grid-template-columns: 1fr 420px; gap: 0; min-height: 0; }
+    .builder { padding: calc(40px * var(--density)) calc(48px * var(--density)); overflow-y: auto; max-width: 100%; }
+    .sidebar { border-left: 1px solid var(--line); background: var(--surface); position: sticky; top: 65px; align-self: start; height: calc(100vh - 65px); display: flex; flex-direction: column; }
+
+    .hero { margin-bottom: calc(40px * var(--density)); max-width: 760px; }
+    .hero h1 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 44px; line-height: 1.05; letter-spacing: -.005em; margin-bottom: 14px; }
+    .hero h1 em { font-style: italic; color: var(--copper); }
+    .hero p { font-size: 15px; line-height: 1.6; color: var(--ink-2); max-width: 60ch; }
+    .hero .formula { margin-top: 18px; padding: 14px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); font-size: 12px; color: var(--ink-2); display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .hero .formula b { font-weight: 500; text-transform: uppercase; letter-spacing: .12em; font-size: 10.5px; color: var(--ink-3); }
+    .hero .formula code { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--copper); background: var(--copper-soft); padding: 3px 8px; border-radius: 3px; }
+
+    .step { margin-bottom: calc(44px * var(--density)); position: relative; }
+    .step.disabled { opacity: .32; pointer-events: none; }
+    .step.disabled .step-title { color: var(--ink-2); }
+    .step-head { display: flex; align-items: baseline; gap: 18px; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+    .step-num { font-family: "Cormorant Garamond", serif; font-style: italic; font-size: 22px; color: var(--copper); line-height: 1; flex-shrink: 0; font-weight: 500; }
+    .step-num::before { content: ""; display: inline-block; width: 18px; height: 1px; background: var(--copper); margin-right: 10px; vertical-align: middle; }
+    .step-title { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 24px; line-height: 1.1; color: var(--ink); letter-spacing: -.005em; }
+    .step-aside { margin-left: auto; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+    .step-aside em { font-style: normal; color: var(--copper); }
+    .step-hint { font-size: 13px; line-height: 1.55; color: var(--ink-2); margin-bottom: 18px; max-width: 64ch; }
+    .step-hint strong { color: var(--ink); font-weight: 500; }
+
+    /* Family select */
+    .family-select { position: relative; max-width: 560px; }
+    .family-select select { width: 100%; padding: 16px 44px 16px 18px; background: var(--surface); border: 1px solid var(--line-2); border-radius: var(--r); font-family: "Cormorant Garamond", serif; font-size: 18px; color: var(--ink); appearance: none; cursor: pointer; transition: border-color .15s; }
+    .family-select select:focus, .family-select select:hover { outline: none; border-color: var(--copper); }
+    .family-select::after { content: ""; position: absolute; right: 18px; top: 50%; width: 8px; height: 8px; border-right: 1.5px solid var(--copper); border-bottom: 1.5px solid var(--copper); transform: translateY(-70%) rotate(45deg); pointer-events: none; }
+
+    /* Base SKU tiles */
+    .base-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+    .base-tile { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); cursor: pointer; transition: border-color .15s, background .15s; text-align: left; }
+    .base-tile:hover { border-color: var(--copper-2); background: var(--surface-2); }
+    .base-tile.on { border-color: var(--copper); background: var(--copper-soft); }
+    .base-tile .check { width: 18px; height: 18px; border: 1.5px solid var(--line-2); border-radius: 3px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--surface); transition: all .15s; }
+    .base-tile.on .check { background: var(--copper); border-color: var(--copper); }
+    .base-tile.on .check::after { content: ""; width: 8px; height: 5px; border-left: 1.5px solid #fff; border-bottom: 1.5px solid #fff; transform: rotate(-45deg) translate(1px, -1px); }
+    .base-tile .b-label { flex: 1; font-size: 13.5px; color: var(--ink); line-height: 1.3; }
+    .base-tile .b-code { font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--copper); background: var(--copper-soft); padding: 3px 7px; border-radius: 3px; letter-spacing: .02em; }
+    [data-theme="dark"] .base-tile.on .b-code { background: rgba(212, 132, 74, .25); }
+
+    /* Finish tiles */
+    .finish-grid, .finish-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; max-width: 900px; }
+    .finish-tile { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 20px 16px 16px; cursor: pointer; text-align: center; transition: transform .2s ease, border-color .15s, box-shadow .2s; position: relative; overflow: hidden; display: block; }
+    .finish-tile:hover { border-color: var(--copper-2); transform: translateY(-2px); box-shadow: 0 10px 24px -16px rgba(26, 18, 8, .25); }
+    .finish-tile.on { border-color: var(--copper); background: var(--copper-soft); }
+    .finish-tile.on::before { content: "✓"; position: absolute; top: 8px; right: 8px; width: 18px; height: 18px; border-radius: 50%; background: var(--copper); color: #fff; font-family: "JetBrains Mono", monospace; font-size: 11px; display: flex; align-items: center; justify-content: center; }
+    .finish-swatch { display: block; width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 14px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.1), 0 2px 8px -2px rgba(0,0,0,.15); position: relative; background-image: radial-gradient(circle at 30% 30%, rgba(255,255,255,.35), transparent 55%); }
+    .finish-meta { display: block; }
+    .finish-name { display: block; font-family: "Cormorant Garamond", serif; font-size: 17px; font-weight: 500; color: var(--ink); line-height: 1.2; margin-bottom: 4px; letter-spacing: -.005em; }
+    .finish-code { display: block; font-family: "JetBrains Mono", monospace; font-size: 10.5px; color: var(--copper); letter-spacing: .06em; text-transform: uppercase; }
+    .finish-default { position: absolute; top: 8px; left: 8px; font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+
+    .brass-note { padding: 18px 22px; background: var(--surface); border: 1px solid var(--line-2); border-left: 3px solid var(--copper); border-radius: 0 var(--r) var(--r) 0; font-size: 13.5px; color: var(--ink-2); line-height: 1.6; max-width: 680px; }
+    .brass-note strong { color: var(--ink); font-weight: 500; }
+
+    /* Accessory groups */
+    .acc-group { margin-bottom: 32px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r); padding: 18px 20px 20px; }
+    .acc-group-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .acc-group-head .dot { width: 7px; height: 7px; border-radius: 50%; }
+    .acc-group-head .gtitle { font-family: "Cormorant Garamond", serif; font-size: 18px; color: var(--ink); font-weight: 500; letter-spacing: .005em; white-space: nowrap; }
+    .acc-group-head .gcount { font-size: 10.5px; color: var(--ink-3); letter-spacing: .08em; text-transform: uppercase; margin-right: auto; font-family: "JetBrains Mono", monospace; }
+    .dot-wall { background: #3a6b3a; } .dot-ceil { background: #3a3d7a; } .dot-post { background: #7a4a2a; } .dot-bilt { background: var(--biltmore); } .dot-dec { background: #a0734a; } .dot-parts { background: #888; } .dot-gas { background: #7a5a2a; } .dot-electric { background: #3a3d7a; }
+
+    .acc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+    .acc-item { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); cursor: pointer; transition: border-color .12s, background .12s, transform .12s; text-align: left; position: relative; }
+    .acc-item:hover { border-color: var(--copper-2); background: var(--surface-2); transform: translateY(-1px); }
+    .acc-item.on { border-color: var(--copper); background: var(--copper-soft); }
+    .acc-item.on::after { content: "✓"; position: absolute; top: 6px; right: 6px; width: 14px; height: 14px; border-radius: 50%; background: var(--copper); color: #fff; font-family: "JetBrains Mono", monospace; font-size: 10px; display: flex; align-items: center; justify-content: center; }
+    .acc-item .a-label { font-size: 12.5px; color: var(--ink); line-height: 1.3; font-weight: 400; padding-right: 18px; }
+    .acc-item.on .a-label { font-weight: 500; }
+    .acc-item .a-code { font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--copper); background: var(--copper-soft); padding: 1px 5px; border-radius: 2px; letter-spacing: .04em; }
+    [data-theme="dark"] .acc-item.on .a-code { background: rgba(212, 132, 74, .25); }
+
+    .biltmore-banner { margin-bottom: 18px; padding: 14px 18px; background: rgba(106, 58, 122, .07); border: 1px solid rgba(106, 58, 122, .22); border-left: 3px solid var(--biltmore); border-radius: 0 var(--r) var(--r) 0; font-size: 13px; color: var(--ink-2); line-height: 1.55; max-width: 760px; }
+    .biltmore-banner strong { color: var(--biltmore); font-weight: 600; letter-spacing: .02em; }
+    [data-theme="dark"] .biltmore-banner { background: rgba(186, 138, 200, .07); border-color: rgba(186, 138, 200, .22); }
+    [data-theme="dark"] .biltmore-banner strong { color: #c8a3d6; }
+
+    .empty-notice { padding: 16px 20px; background: var(--surface); border: 1px dashed var(--line-2); border-radius: var(--r); font-size: 13px; color: var(--ink-3); font-style: italic; line-height: 1.5; max-width: 600px; }
+
+    /* Sidebar */
+    .sidebar-head { padding: 24px 28px 18px; border-bottom: 1px solid var(--line); }
+    .sidebar-label { font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px; }
+    .sidebar-count { font-family: "Cormorant Garamond", serif; font-size: 46px; line-height: 1; font-weight: 500; color: var(--copper); letter-spacing: -.01em; }
+    .sidebar-count-sub { display: inline-block; margin-left: 10px; font-family: "Inter", sans-serif; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); vertical-align: middle; }
+    .sidebar-formula { margin-top: 14px; font-size: 11.5px; color: var(--ink-3); line-height: 1.55; }
+    .sidebar-formula code { font-family: "JetBrains Mono", monospace; font-size: 10.5px; color: var(--copper); background: var(--copper-soft); padding: 2px 5px; border-radius: 3px; letter-spacing: .02em; }
+
+    .sidebar-controls { padding: 14px 28px; border-bottom: 1px solid var(--line); display: flex; gap: 8px; align-items: center; }
+    .sidebar-controls .search { flex: 1; position: relative; }
+    .sidebar-controls .search input { width: 100%; padding: 8px 12px 8px 30px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r); font-size: 12.5px; color: var(--ink); font-family: "JetBrains Mono", monospace; }
+    .sidebar-controls .search input:focus { outline: none; border-color: var(--copper); }
+    .sidebar-controls .search::before { content: ""; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 10px; height: 10px; border: 1.4px solid var(--ink-3); border-radius: 50%; }
+    .sidebar-controls .search::after { content: ""; position: absolute; left: 18px; top: 50%; width: 5px; height: 1.4px; background: var(--ink-3); transform: rotate(45deg) translateY(2px); }
+    .sidebar-controls select { padding: 8px 26px 8px 10px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r); font-size: 11.5px; color: var(--ink-2); font-family: "Inter", sans-serif; appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23b5651d' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
+
+    .sidebar-list { flex: 1; overflow-y: auto; padding: 6px 16px 6px 28px; min-height: 0; }
+    .sidebar-empty { padding: 32px 12px; text-align: center; font-size: 12.5px; color: var(--ink-3); font-style: italic; }
+    .sku-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px 8px 0; border-bottom: 1px solid var(--line); font-family: "JetBrains Mono", monospace; }
+    .sku-row:last-child { border-bottom: none; }
+    .sku-row-num { font-size: 10px; color: var(--ink-3); min-width: 22px; text-align: right; }
+    .sku-row-val { flex: 1; font-size: 12.5px; color: var(--ink); letter-spacing: .01em; word-break: break-all; line-height: 1.4; }
+    .sku-row-val mark { background: rgba(181, 101, 29, .22); color: inherit; padding: 0 1px; border-radius: 2px; }
+    .sku-row-copy { padding: 4px 6px; border-radius: 3px; color: var(--ink-3); font-size: 11px; opacity: 0; transition: opacity .15s, background .12s, color .12s; }
+    .sku-row:hover .sku-row-copy { opacity: 1; }
+    .sku-row-copy:hover { background: var(--copper-soft); color: var(--copper); }
+    .sku-row-copy.ok { color: var(--ok); opacity: 1; }
+
+    .sidebar-foot { padding: 18px 28px 22px; border-top: 1px solid var(--line); display: grid; gap: 8px; }
+    .sf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .btn { padding: 12px 14px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; border-radius: var(--r); font-weight: 500; transition: all .15s; border: 1px solid transparent; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .btn-primary { background: var(--copper); color: #fff; }
+    .btn-primary:hover { background: var(--copper-deep); }
+    .btn-primary:disabled { background: var(--ink-3); opacity: .4; cursor: not-allowed; }
+    .btn-primary.ok { background: var(--ok); }
+    .btn-ghost { background: transparent; color: var(--copper); border-color: var(--copper); }
+    .btn-ghost:hover { background: var(--copper-soft); }
+    .btn-ghost:disabled { color: var(--ink-3); border-color: var(--line-2); cursor: not-allowed; }
+    .btn-text { font-size: 11px; color: var(--ink-3); padding: 6px; letter-spacing: .06em; text-transform: uppercase; text-align: center; }
+    .btn-text:hover { color: var(--copper); }
+    .sidebar-contact { display: block; margin-top: 6px; padding: 10px 6px 2px; text-align: center; font-family: "Cormorant Garamond", serif; font-style: italic; font-size: 13.5px; color: var(--ink-3); text-decoration: none; border-top: 1px solid var(--line); transition: color .12s; }
+    .sidebar-contact span { font-family: "JetBrains Mono", monospace; font-style: normal; font-size: 11.5px; color: var(--copper); letter-spacing: .01em; margin-left: 4px; }
+    .sidebar-contact:hover { color: var(--ink); }
+
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); padding: 10px 20px; background: var(--ink); color: var(--bg); border-radius: 99px; font-size: 12.5px; letter-spacing: .04em; opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none; z-index: 100; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 1100px) { .main { grid-template-columns: 1fr; } .sidebar { position: relative; height: auto; border-left: none; border-top: 1px solid var(--line); top: auto; } }
+    @media (max-width: 720px) { .builder { padding: 24px; } .topbar { padding: 14px 20px; } .hero h1 { font-size: 32px; } }
+  </style>
+
+  <div class="app">
+    <header class="topbar">
+      <div class="topbar-left">
+        <img src="/logo.webp" alt="The Coppersmith" />
+        <span class="topbar-meta">SKU&nbsp;Builder · <em>Showroom</em></span>
+      </div>
+      <div class="topbar-actions">
+        <a class="iconbtn" href="/" title="Back to directions">← Directions</a>
+        <a class="iconbtn" href="/workbench">Workbench</a>
+        <button class="iconbtn" id="themeToggle" title="Toggle dark mode"><span id="themeIcon">☾</span> Theme</button>
+      </div>
+    </header>
+
+    <div class="main">
+      <section class="builder">
+        <div class="hero">
+          <h1>Configure a <em>buildable</em> SKU.</h1>
+          <p>Choose a product family, base size, finish, and any compatible mounts or accessories. Codes are pulled live from the Master Sheet — the system only offers options that actually exist for the base SKU(s) you've picked.</p>
+          <div class="formula">
+            <b>Build order</b>
+            <code>[Base SKU]</code> <span style="color:var(--ink-3)">+</span>
+            <code>[Finish]</code> <span style="color:var(--ink-3)">+</span>
+            <code>[Mount]</code> <span style="color:var(--ink-3)">+</span>
+            <code>[Decorative]</code> <span style="color:var(--ink-3)">+</span>
+            <code>[Gas / Electric]</code>
+          </div>
+        </div>
+
+        <div class="step" id="step1">
+          <div class="step-head">
+            <span class="step-num">I</span>
+            <h2 class="step-title">Family &amp; Ignition</h2>
+            <span class="step-aside">organizational only</span>
+          </div>
+          <p class="step-hint">The parent SKU (e.g. <strong>AS-E</strong>, <strong>AS-G</strong>) is the catalog grouping. It does <em>not</em> appear in the buildable SKU — the actual SKU starts at Step II.</p>
+          <div class="family-select">
+            <select id="parentSku" aria-label="Product family">
+              <option value="">— Choose a product family —</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="step disabled" id="step2">
+          <div class="step-head">
+            <span class="step-num">II</span>
+            <h2 class="step-title">Base SKU</h2>
+            <span class="step-aside">multi-select · <em>the SKU begins here</em></span>
+          </div>
+          <p class="step-hint">Each base SKU has its own set of compatible accessories. Multi-select to generate variants across sizes.</p>
+          <div class="base-grid" id="baseGrid"></div>
+        </div>
+
+        <div class="step disabled" id="step3">
+          <div class="step-head">
+            <span class="step-num">III</span>
+            <h2 class="step-title">Finish</h2>
+            <span class="step-aside" id="finishAside">default · Antique Copper (no suffix)</span>
+          </div>
+          <div class="brass-note" id="brassNote" style="display:none">
+            <strong>Brass-only family.</strong> AOB is the only Biltmore® line sold exclusively in solid brass — the "B" in the SKU already encodes brass. No finish picker, no finish suffix.
+          </div>
+          <div class="finish-grid" id="finishGrid"></div>
+        </div>
+
+        <div class="step disabled" id="step4">
+          <div class="step-head">
+            <span class="step-num">IV</span>
+            <h2 class="step-title">Mounts &amp; Accessories</h2>
+            <span class="step-aside">filtered to the selected base SKU(s)</span>
+          </div>
+          <div id="accessoriesWrap">
+            <div class="empty-notice">Select a product family and at least one base SKU to see compatible accessories.</div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="sidebar">
+        <div class="sidebar-head">
+          <div class="sidebar-label">Generated SKUs</div>
+          <div>
+            <span class="sidebar-count" id="skuCount">0</span>
+            <span class="sidebar-count-sub">combinations</span>
+          </div>
+          <div class="sidebar-formula" id="skuPath">Pick options to start building.</div>
+        </div>
+
+        <div class="sidebar-controls">
+          <div class="search"><input type="text" id="searchInput" placeholder="Filter SKUs…" /></div>
+          <select id="sortSelect">
+            <option value="default">Order: build</option>
+            <option value="az">A → Z</option>
+            <option value="za">Z → A</option>
+            <option value="len">By length</option>
+          </select>
+        </div>
+
+        <div class="sidebar-list" id="skuList">
+          <div class="sidebar-empty" id="skuEmpty">Select options to generate SKUs.</div>
+        </div>
+
+        <div class="sidebar-foot">
+          <button class="btn btn-primary" id="copyAllBtn" disabled>Copy All SKUs</button>
+          <div class="sf-row">
+            <button class="btn btn-ghost" id="exportBtn" disabled>Export CSV</button>
+            <button class="btn btn-ghost" id="shareBtn" disabled>Copy Share Link</button>
+          </div>
+          <button class="btn-text" id="resetBtn">Reset all selections</button>
+          <a class="sidebar-contact" href="mailto:tech@thecoppersmith.net?subject=SKU%20Builder%20question">Questions? <span>tech@thecoppersmith.net</span></a>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    import { initController } from "../lib/controller";
+
+    initController({
+      ids: {
+        parentSel: "parentSku",
+        baseGrid: "baseGrid",
+        finishGrid: "finishGrid",
+        finishAside: "finishAside",
+        brassNote: "brassNote",
+        accessoriesWrap: "accessoriesWrap",
+        steps: ["step1", "step2", "step3", "step4"],
+        skuCount: "skuCount",
+        skuPath: "skuPath",
+        skuList: "skuList",
+        skuEmpty: "skuEmpty",
+        searchInput: "searchInput",
+        sortSelect: "sortSelect",
+        copyAllBtn: "copyAllBtn",
+        exportBtn: "exportBtn",
+        shareBtn: "shareBtn",
+        resetBtn: "resetBtn",
+        toast: "toast",
+      },
+      classes: {
+        on: "on",
+        disabled: "disabled",
+        baseTile: "base-tile",
+        finishTile: "finish-tile",
+        accItem: "acc-item",
+        biltmoreBanner: "biltmore-banner",
+        accGroup: "acc-group",
+        accGroupHead: "acc-group-head",
+        accGrid: "acc-grid",
+      },
+    });
+
+    // Theme toggle
+    const themeBtn = document.getElementById("themeToggle");
+    const themeIcon = document.getElementById("themeIcon");
+    function applyTheme(t: string) {
+      document.body.setAttribute("data-theme", t);
+      if (themeIcon) themeIcon.textContent = t === "dark" ? "☀" : "☾";
+      try { localStorage.setItem("cs-theme", t); } catch (e) {}
+    }
+    try { applyTheme(localStorage.getItem("cs-theme") || "light"); } catch (e) {}
+    if (themeBtn) themeBtn.onclick = () => applyTheme(document.body.getAttribute("data-theme") === "dark" ? "light" : "dark");
+  </script>
+</Base>

@@ -1,0 +1,257 @@
+---
+import Base from "../../layouts/Base.astro";
+import { META } from "../../lib/data";
+
+/**
+ * Print-friendly tear-sheet for a buildable SKU.
+ *
+ * Static page; the SKU is read from `?sku=` or from the URL fragment
+ * on the client. Resolution against the master sheet happens in the
+ * browser using the same DATA blob the builder uses.
+ *
+ * Usage:
+ *   /print/?sku=AS41E-BLK-TS3
+ *   /print/#AS41E-BLK-TS3   (preferred — works without server URL handling)
+ */
+
+const masterSheetDate = new Date(META.masterSheetMtime).toISOString().slice(0, 10);
+---
+<Base title="SKU Tear-Sheet — CopperSmith" description="Print-friendly view of a single buildable SKU.">
+  <style>
+    body {
+      background: #fff;
+      color: #1a1108;
+      font-family: "Inter", system-ui, sans-serif;
+      padding: 40px 56px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    header {
+      border-bottom: 1px solid rgba(26, 18, 8, .15);
+      padding-bottom: 24px;
+      margin-bottom: 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    header img { height: 44px; }
+    header .meta { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #5c4a35; }
+    h1 {
+      font-family: "Cormorant Garamond", serif;
+      font-weight: 500;
+      font-size: 34px;
+      line-height: 1.15;
+      margin-bottom: 6px;
+    }
+    .sku {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 24px;
+      color: #b5651d;
+      margin-bottom: 28px;
+      word-break: break-all;
+    }
+    .summary {
+      font-size: 13.5px;
+      color: #5c4a35;
+      line-height: 1.6;
+      margin-bottom: 36px;
+      max-width: 60ch;
+    }
+    .summary strong { color: #1a1108; }
+    .components { border-top: 1px solid rgba(26, 18, 8, .15); }
+    .row {
+      display: grid;
+      grid-template-columns: 100px 1fr 220px;
+      gap: 16px;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(26, 18, 8, .08);
+      align-items: baseline;
+    }
+    .row .code {
+      font-family: "JetBrains Mono", monospace;
+      font-weight: 500;
+      color: #b5651d;
+      font-size: 13px;
+      letter-spacing: .04em;
+    }
+    .row .label { font-size: 14px; color: #1a1108; }
+    .row .meta {
+      font-size: 11.5px;
+      color: #9b8068;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      text-align: right;
+    }
+    .unknown .code { color: #c00; }
+    footer {
+      margin-top: 56px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(26, 18, 8, .15);
+      font-size: 11px;
+      color: #9b8068;
+      letter-spacing: .04em;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .actions { margin: 24px 0 36px; display: flex; gap: 8px; }
+    .actions a, .actions button {
+      font: inherit;
+      font-size: 12px;
+      padding: 6px 14px;
+      border: 1px solid #b5651d;
+      color: #b5651d;
+      background: transparent;
+      text-decoration: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .actions a:hover, .actions button:hover { background: #f5e6d3; }
+    @media print {
+      body { padding: 0; max-width: none; font-family: Georgia, serif; }
+      header { padding: 16px 24px; }
+      .components { padding: 0 24px; }
+      footer { padding: 12px 24px 24px; }
+      .actions { display: none; }
+    }
+  </style>
+
+  <header>
+    <img src="/logo.webp" alt="The Coppersmith" />
+    <div class="meta">SKU Tear-Sheet</div>
+  </header>
+
+  <h1 id="familyTitle">Loading…</h1>
+  <div class="sku" id="skuDisplay">—</div>
+
+  <div class="summary" id="summary"></div>
+
+  <div class="actions">
+    <a id="openInWorkbench" href="/workbench">Open in Workbench</a>
+    <button type="button" onclick="window.print()">Print</button>
+  </div>
+
+  <div class="components" id="components"></div>
+
+  <footer>
+    <span>Master sheet: {META.masterSheetName} · built {masterSheetDate}</span>
+    <span>sku.thecoppersmith.net</span>
+  </footer>
+
+  <script>
+    import { DATA } from "../../lib/data";
+
+    type Resolved = {
+      raw: string;
+      kind: "base" | "finish" | "accessory" | "unknown";
+      label: string;
+      category?: string;
+    };
+
+    function getSku(): string {
+      const hash = window.location.hash.replace(/^#/, "");
+      if (hash) return hash.toUpperCase();
+      const qs = new URLSearchParams(window.location.search);
+      const fromQs = qs.get("sku");
+      return (fromQs || "").toUpperCase();
+    }
+
+    function render() {
+      const sku = getSku();
+      const parts = sku.split("-").filter(Boolean);
+      const skuEl = document.getElementById("skuDisplay")!;
+      const titleEl = document.getElementById("familyTitle")!;
+      const summaryEl = document.getElementById("summary")!;
+      const compsEl = document.getElementById("components")!;
+
+      if (!parts.length) {
+        skuEl.textContent = "—";
+        titleEl.textContent = "No SKU provided";
+        summaryEl.innerHTML =
+          'Append a SKU to the URL fragment or query string. Example: <code>/print/#AS41E-BLK-TS3</code>';
+        compsEl.innerHTML = "";
+        return;
+      }
+
+      skuEl.textContent = sku;
+      const baseCode = parts[0];
+
+      // Find family that owns this base SKU
+      let family: typeof DATA.families[string] | null = null;
+      let baseLabel = "";
+      for (const fam of Object.values(DATA.families)) {
+        const match = fam.baseSkus.find((b) => b.sku === baseCode);
+        if (match) {
+          family = fam;
+          baseLabel = match.sizeLabel;
+          break;
+        }
+      }
+
+      if (family) {
+        titleEl.textContent = family.label;
+        const bilt = family.isBiltmore ? " · <strong>Biltmore®</strong>" : "";
+        const brass = family.brassOnly ? " · <strong>brass-only</strong>" : "";
+        summaryEl.innerHTML = `<strong>${family.label}</strong> · ${family.ignition} · ${family.fixture}${bilt}${brass}`;
+      } else {
+        titleEl.textContent = "Unknown family";
+        summaryEl.innerHTML = `Base segment <code>${baseCode}</code> did not match any known family in the master sheet. SKU may be malformed or refer to a discontinued product.`;
+      }
+
+      const finishByCode = new Map(DATA.finishes.map((f) => [f.code, f]));
+
+      const resolved: Resolved[] = [];
+      for (let i = 0; i < parts.length; i++) {
+        const p = parts[i];
+        if (i === 0 && family) {
+          resolved.push({ raw: p, kind: "base", label: baseLabel });
+          continue;
+        }
+        if (i === 1 && finishByCode.has(p)) {
+          resolved.push({ raw: p, kind: "finish", label: finishByCode.get(p)!.name });
+          continue;
+        }
+        if (family) {
+          let found = false;
+          for (const cat of DATA.categoryOrder) {
+            const opts = family.accessoryGrid[cat] || [];
+            const opt = opts.find((o) => o.codes[baseCode] === p);
+            if (opt) {
+              resolved.push({ raw: p, kind: "accessory", label: opt.name, category: cat });
+              found = true;
+              break;
+            }
+          }
+          if (found) continue;
+        }
+        resolved.push({ raw: p, kind: "unknown", label: "Unknown / custom code" });
+      }
+
+      compsEl.innerHTML = resolved
+        .map(
+          (r) => `
+        <div class="row${r.kind === "unknown" ? " unknown" : ""}">
+          <span class="code">${r.raw}</span>
+          <span class="label">${r.label}</span>
+          <span class="meta">${
+            r.kind === "accessory"
+              ? r.category
+              : r.kind === "base"
+                ? "Base SKU"
+                : r.kind === "finish"
+                  ? "Finish"
+                  : "Unknown"
+          }</span>
+        </div>`,
+        )
+        .join("");
+
+      document.title = `${sku} — CopperSmith Tear-Sheet`;
+    }
+
+    render();
+    window.addEventListener("hashchange", render);
+  </script>
+</Base>

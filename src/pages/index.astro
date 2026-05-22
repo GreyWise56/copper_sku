@@ -1,0 +1,183 @@
+---
+import Base from "../layouts/Base.astro";
+import { META } from "../lib/data";
+const masterSheetDate = new Date(META.masterSheetMtime).toISOString().slice(0, 10);
+---
+<Base
+  title="CopperSmith SKU Builder — Directions"
+  description="Internal tool for building configurable CopperSmith lantern SKUs. Two visual treatments of the same builder logic, both wired to the Master Sheet."
+>
+  <style>
+    :root {
+      --bg: #f6f3ec;
+      --bg-2: #efeae0;
+      --ink: #1a1208;
+      --ink-2: #5a4a35;
+      --line: rgba(26, 18, 8, 0.12);
+      --copper: #b5651d;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: var(--bg); color: var(--ink); font-family: "Inter", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    body { min-height: 100vh; display: flex; flex-direction: column; }
+    header { padding: 32px 48px 24px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+    header img { height: 56px; width: auto; display: block; }
+    header .meta { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); }
+    main { flex: 1; padding: 24px 48px 64px; max-width: 1280px; width: 100%; margin: 0 auto; }
+    .lede { margin: 24px 0 56px; max-width: 680px; }
+    .lede h1 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 56px; line-height: 1.05; letter-spacing: -.01em; margin-bottom: 18px; }
+    .lede h1 em { font-style: italic; color: var(--copper); }
+    .lede p { font-size: 16px; line-height: 1.6; color: var(--ink-2); max-width: 560px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+    .card { background: #fff; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; text-decoration: none; color: inherit; display: flex; flex-direction: column; transition: transform .25s ease, box-shadow .25s ease; position: relative; }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 16px 40px -20px rgba(26, 18, 8, .25); }
+    .card-thumb { aspect-ratio: 16/10; background: var(--bg-2); position: relative; overflow: hidden; border-bottom: 1px solid var(--line); }
+    .card-body { padding: 24px 28px 28px; display: flex; flex-direction: column; gap: 12px; }
+    .card-eyebrow { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-2); display: flex; align-items: center; gap: 8px; }
+    .card-eyebrow::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--copper); }
+    .card-title { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 32px; line-height: 1.1; }
+    .card-desc { font-size: 14px; line-height: 1.55; color: var(--ink-2); max-width: 42ch; }
+    .card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .card-tag { font-size: 11px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 99px; color: var(--ink-2); letter-spacing: .02em; }
+    .card-cta { margin-top: 14px; font-size: 13px; font-weight: 500; letter-spacing: .04em; color: var(--ink); display: inline-flex; align-items: center; gap: 8px; }
+    .card-cta::after { content: "→"; transition: transform .2s ease; }
+    .card:hover .card-cta::after { transform: translateX(4px); }
+    .thumb-showroom { background: linear-gradient(135deg, #faf4ed 0%, #efe4d2 100%); display: grid; grid-template-columns: 140px 1fr; height: 100%; }
+    .thumb-showroom .ts-side { background: #8B4513; display: flex; flex-direction: column; justify-content: space-between; padding: 18px 14px; color: #f5e6d3; }
+    .thumb-showroom .ts-side .label { font-size: 9px; letter-spacing: .18em; text-transform: uppercase; opacity: .55; }
+    .thumb-showroom .ts-side .val { font-family: "Cormorant Garamond", serif; font-size: 32px; line-height: 1; color: #d4844a; }
+    .thumb-showroom .ts-side .mini { display: flex; flex-direction: column; gap: 4px; }
+    .thumb-showroom .ts-side .mini div { font-family: "JetBrains Mono", monospace; font-size: 8.5px; color: #f5e6d3; opacity: .7; }
+    .thumb-showroom .ts-main { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+    .thumb-showroom .ts-step { display: flex; align-items: center; gap: 8px; }
+    .thumb-showroom .ts-step .n { width: 18px; height: 18px; border-radius: 50%; background: #b5651d; color: #fff; font-size: 10px; display: flex; align-items: center; justify-content: center; }
+    .thumb-showroom .ts-step .t { font-family: "Cormorant Garamond", serif; font-size: 14px; color: #1a1108; }
+    .thumb-showroom .ts-swatches { display: flex; gap: 6px; }
+    .thumb-showroom .ts-swatches .sw { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.08); }
+    .thumb-workbench { background: #f7f7f5; display: grid; grid-template-columns: 1fr 130px; border-bottom-color: #e4e2dd; height: 100%; }
+    .thumb-workbench .tw-main { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+    .thumb-workbench .tw-row { display: flex; gap: 6px; align-items: center; }
+    .thumb-workbench .tw-pill { font-family: "JetBrains Mono", monospace; font-size: 9.5px; padding: 3px 7px; border: 1px solid #d8d6d0; background: #fff; border-radius: 3px; color: #3a3a3a; }
+    .thumb-workbench .tw-pill.on { background: #1a1208; color: #f5f0e6; border-color: #1a1208; }
+    .thumb-workbench .tw-pill.copper { border-color: #b5651d; color: #b5651d; }
+    .thumb-workbench .tw-rail { background: #1a1208; padding: 14px 12px; display: flex; flex-direction: column; gap: 6px; font-family: "JetBrains Mono", monospace; }
+    .thumb-workbench .tw-rail .h { font-size: 8.5px; color: rgba(245, 240, 230, .4); letter-spacing: .15em; text-transform: uppercase; margin-bottom: 4px; }
+    .thumb-workbench .tw-rail .sku { font-size: 10px; color: #d4844a; }
+    .thumb-workbench .tw-label { font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase; color: #7a7770; }
+    footer { padding: 24px 48px 32px; color: var(--ink-2); font-size: 12px; display: flex; justify-content: space-between; align-items: center; gap: 16px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+    footer code { font-family: "JetBrains Mono", monospace; font-size: 11px; background: rgba(181, 101, 29, .08); padding: 2px 6px; border-radius: 3px; color: var(--copper); }
+    footer a { color: var(--copper); text-decoration: none; font-family: "Cormorant Garamond", serif; font-style: italic; font-size: 14px; }
+    footer a span { font-family: "JetBrains Mono", monospace; font-style: normal; font-size: 12px; margin-left: 4px; }
+    footer a:hover span { text-decoration: underline; }
+    @media (max-width: 880px) { .grid { grid-template-columns: 1fr; } main { padding: 24px; } .lede h1 { font-size: 40px; } }
+  </style>
+
+  <header>
+    <img src="/logo.webp" alt="The Coppersmith" />
+    <span class="meta">SKU Builder · Internal Tool · {META.familyCount} families</span>
+  </header>
+  <main>
+    <div class="lede">
+      <h1>Pick a <em>direction</em> for the SKU builder.</h1>
+      <p>
+        Two visual treatments of the same builder logic, both wired to the full Master Sheet
+        ({META.familyCount} families, all base SKUs, all accessory codes). Same flow, same outputs —
+        different posture for retailers vs. PIM integrators.
+      </p>
+    </div>
+
+    <div class="grid">
+      <a class="card" href="/showroom">
+        <div class="card-thumb">
+          <div class="thumb-showroom">
+            <div class="ts-side">
+              <div>
+                <div class="label">Generated</div>
+                <div class="val">48</div>
+              </div>
+              <div class="mini">
+                <div>AS41E-BLK-WY-FT</div>
+                <div>AS41E-BLK-GN</div>
+                <div>AS41E-BRZ-WY</div>
+              </div>
+            </div>
+            <div class="ts-main">
+              <div class="ts-step"><div class="n">1</div><div class="t">Adair Square — Electric</div></div>
+              <div class="ts-step"><div class="n">2</div><div class="t">Base · 11" / 14"</div></div>
+              <div class="ts-step"><div class="n">3</div><div class="t">Finish</div></div>
+              <div class="ts-swatches">
+                <div class="sw" style="background:#c87941"></div>
+                <div class="sw" style="background:#2a2a2a"></div>
+                <div class="sw" style="background:#6b7280"></div>
+                <div class="sw" style="background:#6b4226"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-eyebrow">Showroom</span>
+          <h2 class="card-title">Heritage, branded, retailer-facing.</h2>
+          <p class="card-desc">
+            Warm neutrals, the wordmark on full display, generous breathing room, large finish swatches. Reads like a tool that belongs alongside the catalog.
+          </p>
+          <div class="card-tags">
+            <span class="card-tag">Cormorant Garamond + Inter</span>
+            <span class="card-tag">Copper accent</span>
+            <span class="card-tag">Editorial spacing</span>
+          </div>
+          <span class="card-cta">Open Showroom</span>
+        </div>
+      </a>
+
+      <a class="card" href="/workbench">
+        <div class="card-thumb">
+          <div class="thumb-workbench">
+            <div class="tw-main">
+              <div class="tw-label">01 &nbsp;Family</div>
+              <div class="tw-row">
+                <span class="tw-pill on">AS-E</span>
+                <span class="tw-pill">AS-G</span>
+              </div>
+              <div class="tw-label">02 &nbsp;Base</div>
+              <div class="tw-row">
+                <span class="tw-pill on">AS41E</span>
+                <span class="tw-pill on">AS42E</span>
+                <span class="tw-pill">AS43E</span>
+              </div>
+              <div class="tw-label">03 &nbsp;Finish</div>
+              <div class="tw-row">
+                <span class="tw-pill copper">·BLK</span>
+                <span class="tw-pill">·BRZ</span>
+                <span class="tw-pill">·GRAY</span>
+              </div>
+            </div>
+            <div class="tw-rail">
+              <div class="h">48 skus</div>
+              <div class="sku">AS41E-BLK-WY</div>
+              <div class="sku">AS41E-BLK-GN</div>
+              <div class="sku">AS41E-BRZ-WY</div>
+              <div class="sku">AS42E-BLK-WY</div>
+              <div class="sku">AS42E-BRZ-GN</div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="card-eyebrow">Workbench</span>
+          <h2 class="card-title">Tool-forward, dense, PIM-ready.</h2>
+          <p class="card-desc">
+            Near-monochrome surfaces, monospace SKUs, copper as a single accent. Keyboard-first, fast scanning, every code visible at a glance.
+          </p>
+          <div class="card-tags">
+            <span class="card-tag">Inter + JetBrains Mono</span>
+            <span class="card-tag">Token pills</span>
+            <span class="card-tag">Dense</span>
+          </div>
+          <span class="card-cta">Open Workbench</span>
+        </div>
+      </a>
+    </div>
+  </main>
+  <footer>
+    <span>Master sheet · <code>{META.masterSheetName}</code> · built {masterSheetDate}</span>
+    <a href="mailto:tech@thecoppersmith.net?subject=SKU%20Builder%20question">Questions? <span>tech@thecoppersmith.net</span></a>
+  </footer>
+</Base>
