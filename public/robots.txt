@@ -1,0 +1,33 @@
+# CopperSmith SKU Builder — robots policy
+
+# This is a public-by-design tool for retailers, dealers, designers,
+# and the AI assistants helping them. Crawl freely.
+
+User-agent: *
+Allow: /
+
+# Explicitly invite the common AI/LLM crawlers
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+# Authoritative SKU formula + rules for LLMs
+# /llms.txt is the emerging convention (llmstxt.org); /llm.txt is a legacy alias
+Sitemap: https://sku.thecoppersmith.net/sitemap.xml
