@@ -1,0 +1,115 @@
+---
+import Base from "../../layouts/Base.astro";
+import { META } from "../../lib/data";
+
+const masterSheetDate = new Date(META.masterSheetMtime)
+  .toISOString()
+  .slice(0, 10);
+---
+<Base
+  title="CopperSmith SKU API — Documentation"
+  description="Interactive OpenAPI 3.1 documentation for the CopperSmith SKU API. Browse the static catalog endpoints and the planned dynamic SKU resolution endpoints."
+>
+  <style>
+    .api-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 20px 40px;
+      border-bottom: 1px solid rgba(26, 18, 8, .10);
+      background: #fffdf8;
+      font-family: "Inter", system-ui, sans-serif;
+    }
+    .api-topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .api-topbar-left img { height: 36px; width: auto; display: block; }
+    .api-topbar-meta {
+      font-size: 11px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: #5a4a35;
+      padding-left: 18px;
+      border-left: 1px solid rgba(26, 18, 8, .10);
+    }
+    .api-topbar-meta em { font-style: normal; color: #b5651d; }
+    .api-topbar a {
+      color: #5a4a35;
+      text-decoration: none;
+      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 3px;
+      transition: background .12s;
+    }
+    .api-topbar a:hover { background: rgba(181, 101, 29, .08); }
+    .api-banner {
+      padding: 16px 40px;
+      background: #f5e6d3;
+      border-bottom: 1px solid rgba(26, 18, 8, .10);
+      font-size: 13px;
+      color: #5a4a35;
+      line-height: 1.55;
+      font-family: "Inter", system-ui, sans-serif;
+    }
+    .api-banner code {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11.5px;
+      color: #8B4513;
+      background: rgba(139, 69, 19, .08);
+      padding: 1px 5px;
+      border-radius: 2px;
+    }
+    .api-banner strong { color: #1a1108; }
+    #swagger-ui { padding: 20px 0; }
+    /* Swagger UI tone-matching */
+    .swagger-ui .topbar { display: none; }
+    .swagger-ui .info { margin: 30px 40px; }
+    .swagger-ui .opblock-tag {
+      font-family: "Cormorant Garamond", serif !important;
+      letter-spacing: .005em;
+    }
+    body { background: #fbfaf7; }
+  </style>
+
+  <header class="api-topbar">
+    <div class="api-topbar-left">
+      <a href="/" aria-label="Home"><img src="/logo.webp" alt="The Coppersmith" /></a>
+      <span class="api-topbar-meta">SKU API · <em>Documentation</em></span>
+    </div>
+    <nav>
+      <a href="/">← Directions</a>
+      <a href="/workbench">Workbench</a>
+      <a href="/showroom">Showroom</a>
+      <a href="/api/v1/openapi.json">openapi.json</a>
+    </nav>
+  </header>
+
+  <div class="api-banner">
+    <strong>Phase 1: static catalog endpoints are live.</strong>
+    Try <code>GET /api/v1/version.json</code>, <code>/families.json</code>, or
+    <code>/base-skus/AS41E.json</code>. The dynamic endpoints
+    (<code>validate</code>, <code>resolve</code>, <code>build</code>, <code>search</code>)
+    list in the spec but ship in Phase 2 as a Cloudflare Worker — they currently
+    return 503. Catalog built from <code>{META.masterSheetName}</code> on {masterSheetDate}.
+  </div>
+
+  <div id="swagger-ui"></div>
+
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
+  <script is:inline src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+  <script is:inline>
+    window.addEventListener("DOMContentLoaded", () => {
+      // eslint-disable-next-line no-undef
+      SwaggerUIBundle({
+        url: "/api/v1/openapi.json",
+        dom_id: "#swagger-ui",
+        deepLinking: true,
+        defaultModelsExpandDepth: 1,
+        tryItOutEnabled: true,
+      });
+    });
+  </script>
+</Base>

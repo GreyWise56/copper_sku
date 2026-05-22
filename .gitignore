@@ -30,3 +30,6 @@ pnpm-debug.log*
 src/data/families.json
 src/data/meta.json
 
+# generated API mirror (regenerated on every build via prebuild script — spec §17.6)
+public/api/v1/
+
