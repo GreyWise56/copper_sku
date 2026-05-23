@@ -187,8 +187,163 @@ import { META } from "../lib/data";
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); padding: 10px 20px; background: var(--ink); color: var(--bg); border-radius: 99px; font-size: 12.5px; letter-spacing: .04em; opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none; z-index: 100; }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    @media (max-width: 1100px) { .main { grid-template-columns: 1fr; } .sidebar { position: relative; height: auto; border-left: none; border-top: 1px solid var(--line); top: auto; } }
-    @media (max-width: 720px) { .builder { padding: 24px; } .topbar { padding: 14px 20px; } .hero h1 { font-size: 32px; } }
+    /* ───── Mobile sticky SKU bar + sheet (spec §18.2) ───── */
+    .mobile-bar { display: none; }
+    .drag-handle, .sheet-close { display: none; }
+
+    @media (max-width: 1100px) {
+      /* Single-column layout — builder gets reservation for the fixed bar */
+      .main { grid-template-columns: 1fr; }
+      .builder { padding-bottom: 80px; }
+
+      /* Convert .sidebar to a fixed-position bottom sheet (surface palette) */
+      .sidebar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        top: auto;
+        height: 80vh;
+        max-height: 80vh;
+        border-left: none;
+        border-top: 1px solid var(--line);
+        border-top-left-radius: 16px;
+        border-top-right-radius: 16px;
+        transform: translateY(100%);
+        transition: transform 0.28s cubic-bezier(.2, .8, .2, 1);
+        z-index: 71;
+        padding-top: 8px;
+        box-shadow: 0 -8px 24px -10px rgba(26, 18, 8, 0.25);
+      }
+      body.sheet-open .sidebar { transform: translateY(0); }
+      body.sheet-open { overflow: hidden; }
+
+      /* Drag handle pill */
+      .drag-handle {
+        display: block;
+        width: 40px;
+        height: 4px;
+        background: rgba(26, 18, 8, 0.20);
+        border-radius: 2px;
+        margin: 4px auto 8px;
+        cursor: grab;
+        touch-action: pan-y;
+      }
+      .drag-handle:active { cursor: grabbing; }
+
+      /* Close button top-right */
+      .sheet-close {
+        display: flex;
+        position: absolute;
+        top: 10px;
+        right: 14px;
+        width: 44px;
+        height: 44px;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        color: var(--ink-3);
+        font-size: 22px;
+        line-height: 1;
+        border-radius: 50%;
+        z-index: 1;
+        transition: background 0.12s;
+      }
+      .sheet-close:hover, .sheet-close:focus-visible {
+        background: var(--copper-soft);
+        color: var(--copper);
+      }
+
+      /* Fixed-position bottom bar (collapsed state, surface palette) */
+      .mobile-bar {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 64px;
+        background: var(--surface);
+        color: var(--ink);
+        border: none;
+        border-top: 1px solid var(--line);
+        align-items: center;
+        gap: 10px;
+        padding: 0 16px;
+        z-index: 60;
+        box-shadow: 0 -8px 24px -10px rgba(26, 18, 8, 0.25);
+        cursor: pointer;
+        font-family: inherit;
+        text-align: left;
+      }
+      .mobile-bar .mb-count {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 28px;
+        font-weight: 500;
+        color: var(--copper);
+        line-height: 1;
+        flex-shrink: 0;
+      }
+      .mobile-bar .mb-count-sub {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--ink-3);
+        font-weight: 500;
+        flex-shrink: 0;
+        margin-left: -4px;
+      }
+      .mobile-bar .mb-preview {
+        flex: 1;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 12px;
+        color: var(--ink);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        letter-spacing: 0.02em;
+        margin-left: 8px;
+        min-width: 0;
+      }
+      .mobile-bar .mb-chevron {
+        flex-shrink: 0;
+        font-size: 12px;
+        color: var(--ink-3);
+        transition: transform 0.2s;
+        padding-left: 4px;
+      }
+      body.sheet-open .mobile-bar .mb-chevron { transform: rotate(180deg); }
+
+      /* Backdrop dim layer */
+      .sheet-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(26, 18, 8, 0.45);
+        z-index: 70;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s;
+      }
+      body.sheet-open .sheet-backdrop {
+        opacity: 1;
+        pointer-events: auto;
+      }
+    }
+
+    /* ───── Tap target sizing (spec §18.4) — phones only ───── */
+    @media (max-width: 720px) {
+      .builder { padding: 24px; padding-bottom: 80px; }
+      .topbar { padding: 14px 20px; }
+      .hero h1 { font-size: 32px; }
+
+      /* Min 44px tap targets */
+      .base-tile { padding: 16px 16px; min-height: 44px; }
+      .acc-item { padding: 14px 12px; min-height: 44px; }
+      .finish-tile { padding: 22px 16px 18px; min-height: 44px; }
+      .btn { padding: 14px 16px; min-height: 44px; }
+      .iconbtn { padding: 10px 12px; min-height: 44px; }
+      .topbar-actions { overflow-x: auto; }
+    }
   </style>
 
   <div class="app">
@@ -267,7 +422,9 @@ import { META } from "../lib/data";
         </div>
       </section>
 
-      <aside class="sidebar">
+      <aside class="sidebar" id="rail">
+        <div class="drag-handle" id="dragHandle" aria-hidden="true"></div>
+        <button class="sheet-close" id="sheetClose" type="button" aria-label="Close SKU panel">×</button>
         <div class="sidebar-head">
           <div class="sidebar-label">Generated SKUs</div>
           <div>
@@ -303,6 +460,15 @@ import { META } from "../lib/data";
       </aside>
     </div>
   </div>
+
+  <!-- Mobile-only sticky SKU bar + backdrop (§18.2). Hidden above 1100px. -->
+  <button class="mobile-bar" id="mobileBar" type="button" aria-label="Show SKU output panel">
+    <span class="mb-count" id="mbCount">0</span>
+    <span class="mb-count-sub">SKUs</span>
+    <span class="mb-preview" id="mbPreview">Pick options to start</span>
+    <span class="mb-chevron" aria-hidden="true">▲</span>
+  </button>
+  <div class="sheet-backdrop" id="sheetBackdrop" hidden></div>
 
   <div class="toast" id="toast"></div>
 
@@ -342,6 +508,80 @@ import { META } from "../lib/data";
         accGrid: "acc-grid",
       },
     });
+
+    // ───── Mobile sticky bar + sheet (spec §18.2) ─────
+    const bar = document.getElementById("mobileBar");
+    const backdrop = document.getElementById("sheetBackdrop");
+    const sheetClose = document.getElementById("sheetClose");
+    const dragHandle = document.getElementById("dragHandle");
+    const mbCount = document.getElementById("mbCount");
+    const mbPreview = document.getElementById("mbPreview");
+    const skuCountEl = document.getElementById("skuCount");
+    const skuListEl = document.getElementById("skuList");
+
+    const openSheet = () => {
+      document.body.classList.add("sheet-open");
+      if (backdrop) backdrop.hidden = false;
+    };
+    const closeSheet = () => {
+      document.body.classList.remove("sheet-open");
+    };
+
+    bar?.addEventListener("click", () => {
+      if (document.body.classList.contains("sheet-open")) closeSheet();
+      else openSheet();
+    });
+    backdrop?.addEventListener("click", closeSheet);
+    sheetClose?.addEventListener("click", closeSheet);
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && document.body.classList.contains("sheet-open"))
+        closeSheet();
+    });
+
+    const syncBar = () => {
+      if (!mbCount || !mbPreview || !skuCountEl || !skuListEl) return;
+      const n = skuCountEl.textContent || "0";
+      mbCount.textContent = n;
+      const firstSku = skuListEl.querySelector(".sku-row-val");
+      mbPreview.textContent = firstSku
+        ? firstSku.textContent || ""
+        : n === "0"
+          ? "Pick options to start"
+          : "Tap to view SKUs";
+    };
+    if (skuCountEl) {
+      new MutationObserver(syncBar).observe(skuCountEl, {
+        childList: true,
+        characterData: true,
+        subtree: true,
+      });
+    }
+    if (skuListEl) {
+      new MutationObserver(syncBar).observe(skuListEl, {
+        childList: true,
+        subtree: true,
+      });
+    }
+    syncBar();
+
+    // Swipe-down on drag handle (spec §18.2)
+    let dragStartY: number | null = null;
+    dragHandle?.addEventListener("pointerdown", (e) => {
+      dragStartY = e.clientY;
+      dragHandle.setPointerCapture(e.pointerId);
+    });
+    dragHandle?.addEventListener("pointermove", (e) => {
+      if (dragStartY == null) return;
+      if (e.clientY - dragStartY > 60) {
+        closeSheet();
+        dragStartY = null;
+      }
+    });
+    const dragEnd = () => {
+      dragStartY = null;
+    };
+    dragHandle?.addEventListener("pointerup", dragEnd);
+    dragHandle?.addEventListener("pointercancel", dragEnd);
 
     // Theme toggle
     const themeBtn = document.getElementById("themeToggle");
