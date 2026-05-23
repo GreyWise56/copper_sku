@@ -12,3 +12,15 @@
   --color-ink-mid:        #5c4a35;
   --color-ink-light:      #9b8068;
 }
+
+/* Defensive root-level overflow guard. If any descendant overshoots the
+   viewport (long SKU code, off-by-one flex math, etc.), clip rather than
+   let the body widen and trigger horizontal scroll on every block. Uses
+   `clip` (no new scroll context, fixed children still anchor correctly)
+   with `hidden` as the legacy fallback for older browsers. Applies at all
+   widths — desktop is unaffected because nothing overshoots there. */
+html, body {
+  overflow-x: hidden;
+  overflow-x: clip;
+  max-width: 100vw;
+}

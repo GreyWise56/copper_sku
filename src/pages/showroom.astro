@@ -344,22 +344,23 @@ import Base from "../layouts/Base.astro";
       .hero h1 { font-size: 32px; }
 
       /* Force long content (URLs, SKU codes, "compatible") to wrap rather
-         than clip at the viewport edge. */
+         than clip at the viewport edge. max-width: 100% so the paragraph
+         doesn't inherit a wider intrinsic width from inline children. */
       .hero p,
       .step-hint,
-      .step-hint p {
+      .step-hint p,
+      .step p,
+      .step-hint code,
+      .step p code {
         overflow-wrap: anywhere;
         word-break: break-word;
+        max-width: 100%;
       }
 
-      /* Build-order formula stacks vertically — each pill on its own line
-         instead of overflowing the horizontal flex row. */
-      .hero .formula {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-      }
-      .hero .formula code { word-break: break-word; }
+      /* Build-order formula is decorative documentation; same info lives in
+         /humans.txt and /llms.txt. Hide on phones to recover vertical space
+         and avoid the horizontal flex overflow it was causing. */
+      .hero .formula { display: none; }
 
       /* Min 44px tap targets */
       .base-tile { padding: 16px 16px; min-height: 44px; }
