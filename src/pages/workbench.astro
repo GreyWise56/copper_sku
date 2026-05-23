@@ -1,7 +1,6 @@
 ---
 import Base from "../layouts/Base.astro";
 import { META } from "../lib/data";
-const masterSheetDate = new Date(META.masterSheetMtime).toISOString().slice(0, 10);
 ---
 <Base
   title="CopperSmith SKU Builder — Workbench"
@@ -362,6 +361,25 @@ const masterSheetDate = new Date(META.masterSheetMtime).toISOString().slice(0, 1
       .topbar-actions { overflow-x: auto; }
       /* Section padding can shrink so content has more room */
       .section { margin-bottom: 28px; }
+
+      /* Family row stacks: caption sits below the select rather than crammed
+         beside it. The select naturally fills width via flex: 1 in column. */
+      .family-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      .family-meta { font-size: 11.5px; }
+    }
+
+    /* ───── Narrow-phone ribbon (spec §18 follow-up) ───── */
+    /* At 380px the four ribbon steps + their value pills won't fit. Drop the
+       value slot — the bottom bar already shows count + preview live, so the
+       ribbon value duplicates that. Keep the numeral and the step label. */
+    @media (max-width: 480px) {
+      .ribbon-step .val { display: none; }
+      .ribbon-step { padding-right: 12px; padding-left: 0; }
+      .ribbon-step + .ribbon-step { padding-left: 12px; }
     }
   </style>
 
