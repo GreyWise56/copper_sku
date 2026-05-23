@@ -1,6 +1,5 @@
 ---
 import Base from "../layouts/Base.astro";
-import { META } from "../lib/data";
 ---
 <Base
   title="CopperSmith SKU Builder — Showroom"
@@ -332,9 +331,35 @@ import { META } from "../lib/data";
 
     /* ───── Tap target sizing (spec §18.4) — phones only ───── */
     @media (max-width: 720px) {
-      .builder { padding: 24px; padding-bottom: 80px; }
+      .builder {
+        padding: 24px;
+        padding-bottom: 80px;
+        /* Cap horizontal overflow at the builder root — if any child still
+           overshoots (long SKU code, etc.), clip rather than letting it
+           expand the body and trigger horizontal scroll on every block. */
+        overflow-x: hidden;
+        min-width: 0;
+      }
       .topbar { padding: 14px 20px; }
       .hero h1 { font-size: 32px; }
+
+      /* Force long content (URLs, SKU codes, "compatible") to wrap rather
+         than clip at the viewport edge. */
+      .hero p,
+      .step-hint,
+      .step-hint p {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+
+      /* Build-order formula stacks vertically — each pill on its own line
+         instead of overflowing the horizontal flex row. */
+      .hero .formula {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      .hero .formula code { word-break: break-word; }
 
       /* Min 44px tap targets */
       .base-tile { padding: 16px 16px; min-height: 44px; }
