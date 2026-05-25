@@ -233,6 +233,8 @@ type Family = {
   isBiltmore: boolean;
   rawParent: string;
   brassOnly: boolean;
+  /** Per spec §6.7. Undefined ⇒ all five finishes; set for brassOnly only. */
+  allowedFinishes?: string[];
   baseSkus: { sku: string; size: string; sizeLabel: string }[];
   accessoryGrid: Record<string, AccessoryOption[]>;
 };
@@ -283,6 +285,18 @@ for (const fam of Object.values(families)) {
   } else if (raw.startsWith("AO")) {
     if (!fam.label.includes("Copper")) fam.label += " Copper";
     fam.brassOnly = false;
+  }
+}
+
+// Per spec §6.7 (Jordan, 2026-05-25): AOB families default to bare brass
+// (empty-code finish, no suffix) and accept exactly one optional finish
+// (CLEAR, the protective powder coat). BLK/GRAY/BRZ stay excluded.
+// Non-AOB families have allowedFinishes undefined → picker shows all five.
+const AOB_ALLOWED_FINISHES = ["", "CLEAR"];
+for (const fam of Object.values(families)) {
+  if (fam.brassOnly) {
+    (fam as Family & { allowedFinishes?: string[] }).allowedFinishes =
+      AOB_ALLOWED_FINISHES;
   }
 }
 
@@ -457,13 +471,20 @@ const finishesPayload = {
     ...(f.code === "" ? { default: true } : {}),
   })),
   brassOnlyFamilies,
+  brassOnlyAllowedFinishes: AOB_ALLOWED_FINISHES,
+  brassDefault: {
+    code: "",
+    name: "Antique Brass",
+    color: "#b08d57",
+    note: "Brass-only families render the empty-code default chip as 'Antique Brass' with a warm brass swatch, not 'Antique Copper'. Same no-suffix behavior, different label.",
+  },
   notes: {
     antiqueCopper:
       "Empty-string finish code. No suffix appended to the SKU.",
     clearSwatch:
       "Swatch color renders as white (#ffffff) per Jordan's note, 2026-05-21.",
     brassOnly:
-      "Listed families never receive a finish suffix. Output SKUs omit the finish segment entirely.",
+      "Per spec §6.7 (updated 2026-05-25): brassOnly families now accept exactly two finishes — bare brass default (empty code, no suffix) and CLEAR (-CLEAR suffix). BLK / GRAY / BRZ remain excluded.",
   },
 };
 fs.writeFileSync(
@@ -555,6 +576,9 @@ for (const key of familyKeysSorted) {
     fixture: fam.fixture,
     isBiltmore: fam.isBiltmore,
     brassOnly: fam.brassOnly,
+    ...(fam.allowedFinishes
+      ? { allowedFinishes: fam.allowedFinishes }
+      : {}),
     baseSkus: fam.baseSkus,
     accessoryGrid: grid,
     links: {
@@ -615,8 +639,9 @@ for (const b of allBaseSkus) {
       });
     }
   }
-  const finishesAvailable = fam.brassOnly
-    ? []
+  // Per spec §6.7. AOB families: ["", "CLEAR"]. Everyone else: all five.
+  const finishesAvailable = fam.allowedFinishes
+    ? [...fam.allowedFinishes]
     : DATA.finishes.map((f) => f.code);
   const payload = {
     sku: b.sku,

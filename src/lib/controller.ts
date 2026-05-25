@@ -119,25 +119,39 @@ export function initController(opts: {
   }
 
   // ── Finish swatches ─────────────────────────────────────────────────
-  function buildFinishGrid() {
+  // Per spec §6.7 (Jordan, 2026-05-25): brass-only families show a picker
+  // with exactly two chips (bare brass default + CLEAR powder coat). The
+  // default chip is relabeled "Antique Brass" with a warm brass swatch.
+  // Non-brass families keep all five finishes.
+  const BRASS_DEFAULT_COLOR = "#b08d57";
+  const BRASS_DEFAULT_NAME = "Antique Brass";
+
+  function rebuildFinishGrid(fam: Family | null) {
     const g = $(ids.finishGrid);
     if (!g) return;
     g.innerHTML = "";
+    const allowed = fam?.allowedFinishes ?? null;
+    const isBrass = !!fam?.brassOnly;
     for (const f of DATA.finishes) {
+      if (allowed && !allowed.includes(f.code)) continue;
+      const isDefault = f.code === "";
+      const name = isBrass && isDefault ? BRASS_DEFAULT_NAME : f.name;
+      const color = isBrass && isDefault ? BRASS_DEFAULT_COLOR : f.color;
+      const isClear = f.code === "CLEAR";
+
       const tile = document.createElement("button");
       tile.type = "button";
       tile.className = classes.finishTile;
       tile.dataset.code = f.code;
-      const isClear = f.code === "CLEAR";
       tile.innerHTML = `
-        <span class="finish-swatch" style="background:${f.color}${
+        <span class="finish-swatch" style="background:${color}${
           isClear ? ";box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)" : ""
         }"></span>
         <span class="finish-meta">
-          <span class="finish-name">${f.name}</span>
+          <span class="finish-name">${name}</span>
           <span class="finish-code">${f.code || "default"}</span>
         </span>
-        ${!f.code ? '<span class="finish-default">DEFAULT</span>' : ""}
+        ${isDefault ? '<span class="finish-default">DEFAULT</span>' : ""}
       `;
       tile.addEventListener("click", () => {
         toggleArr(state.finishes, f.code);
@@ -148,23 +162,19 @@ export function initController(opts: {
     }
   }
 
-  function applyFinishMode(brassOnly: boolean) {
-    const grid = $(ids.finishGrid);
+  function applyFinishMode(fam: Family | null) {
     const note = $(ids.brassNote);
     const aside = $(ids.finishAside);
-    if (brassOnly) {
-      if (grid) grid.style.display = "none";
-      if (note) note.style.display = "";
-      if (aside) aside.textContent = "brass only · finish suffix omitted";
-      state.finishes = [];
-      grid?.querySelectorAll(`.${classes.finishTile}`).forEach((el) =>
-        el.classList.remove(ON),
-      );
-    } else {
-      if (grid) grid.style.display = "";
-      if (note) note.style.display = "none";
-      if (aside) aside.textContent = "default · Antique Copper (no suffix)";
-    }
+    const brass = !!fam?.brassOnly;
+    if (note) note.style.display = brass ? "" : "none";
+    if (aside)
+      aside.textContent = brass
+        ? "brass default · optional CLEAR powder coat"
+        : "default · Antique Copper (no suffix)";
+    // Always clear selection state when the family changes; the new picker
+    // chips don't carry over their old selected class.
+    state.finishes = [];
+    rebuildFinishGrid(fam);
   }
 
   function toggleArr<T>(arr: T[], val: T): void {
@@ -194,7 +204,7 @@ export function initController(opts: {
       if (aw)
         aw.innerHTML =
           '<div class="empty-notice">Select a product family and at least one base SKU to see compatible accessories.</div>';
-      applyFinishMode(false);
+      applyFinishMode(null);
       regenerate();
       pushHash();
       return;
@@ -226,7 +236,7 @@ export function initController(opts: {
     if (aw)
       aw.innerHTML =
         '<div class="empty-notice">Select at least one base SKU above to see compatible accessories.</div>';
-    applyFinishMode(!!fam.brassOnly);
+    applyFinishMode(fam);
     setStepEnabled(1, true);
     setStepEnabled(2, true);
     setStepEnabled(3, true);
@@ -588,10 +598,17 @@ export function initController(opts: {
     suppressHash = true;
     if (parentSel) parentSel.value = restored.parent;
     onParentChange();
+    const restoredFam = DATA.families[restored.parent];
     state.baseSkus = restored.baseSkus.filter((sku) =>
-      DATA.families[restored.parent].baseSkus.some((b) => b.sku === sku),
+      restoredFam.baseSkus.some((b) => b.sku === sku),
     );
-    state.finishes = restored.finishes;
+    // Per §6.7: a stale permalink like AOB28E-BLK shouldn't generate an
+    // invalid SKU after the rule change. Filter the restored finishes
+    // through the family's allowedFinishes set if it exists.
+    const allowed = restoredFam.allowedFinishes;
+    state.finishes = allowed
+      ? restored.finishes.filter((c) => allowed.includes(c))
+      : restored.finishes;
     state.accessories = restored.accessories;
     state.companions = restored.companions;
     // Reflect in DOM
@@ -612,7 +629,7 @@ export function initController(opts: {
 
   // ── Wire up static buttons ─────────────────────────────────────────
   buildParentDropdown();
-  buildFinishGrid();
+  rebuildFinishGrid(null);
   setStepEnabled(1, false);
   setStepEnabled(2, false);
   setStepEnabled(3, false);

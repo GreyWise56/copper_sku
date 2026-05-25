@@ -15,6 +15,12 @@ export type Family = {
   fixture: string;
   isBiltmore: boolean;
   brassOnly: boolean;
+  /**
+   * Per spec §6.7 (updated 2026-05-25). Undefined ⇒ picker shows all five
+   * finishes. Set on brassOnly families to ["", "CLEAR"] so the picker
+   * filters to brass-default + CLEAR powder coat only.
+   */
+  allowedFinishes?: string[];
   rawParent: string;
   baseSkus: { sku: string; size: string; sizeLabel: string }[];
   accessoryGrid: Record<string, AccessoryOption[]>;
