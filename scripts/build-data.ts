@@ -87,7 +87,62 @@ const MOUNT_MUTEX = [
   "CEILING MOUNT",
   "POST & PIER MOUNT",
 ];
-const ACCESSORY_SECTIONS = new Set(CAT_ORDER);
+
+// June 10 master uses two product tabs whose section-banner text drifted from
+// the canonical category keys (trailing spaces, a parenthetical on wall
+// accessories, a "FINISHES" banner that is NOT an accessory section). Normalize
+// every banner to a canonical CAT_ORDER key, or null to skip it.
+function normalizeBanner(raw: string): string | null {
+  const n = raw.replace(/\s+/g, " ").trim().toUpperCase();
+  if (n === "WALL MOUNT") return "WALL MOUNT";
+  if (n.startsWith("WALL ACCESSORIES") || n === "WALL MOUNT ACCESSORIES")
+    return "WALL MOUNT ACCESSORIES";
+  if (n === "CEILING MOUNT") return "CEILING MOUNT";
+  if (n.startsWith("POST & PIER")) return "POST & PIER MOUNT";
+  if (n === "DECORATIVE OPTIONS") return "DECORATIVE OPTIONS";
+  if (n === "PARTS") return "PARTS";
+  if (n === "ELECTRIC") return "ELECTRIC";
+  if (n === "GAS") return "GAS";
+  // "AVAILABLE FINISHES" / "FINISHES" and all metadata banners (Identity,
+  // Taxonomy, Pricing, …) are not accessory sections.
+  return null;
+}
+
+// The "Weiyan" accessory column is the v1.0 hardcoded internal marker. On W
+// rows it reads "Yes", but the W ignition lives in the base SKU itself — it is
+// never an emittable accessory code. Drop the column wherever it appears
+// (June 10 brief). The Weiyan LED *product* is its own ignition, not a suffix.
+function isDroppedAccessory(name: string): boolean {
+  return name.trim().toLowerCase() === "weiyan";
+}
+
+// "----" (and any all-dash cell) is the explicit N/A sentinel the master sheet
+// puts in inapplicable accessory cells — e.g. every electric cell on a W row.
+// Treat it as empty so it never becomes a bogus accessory code.
+function isNA(v: string): boolean {
+  return v === "" || /^-+$/.test(v);
+}
+
+// Base-field columns by header NAME, not index — the June 10 schema rework
+// shifted every column (Collection 4→8, Power Source 8→10, etc.) and the two
+// product tabs have different layouts, so indices are never safe to hardcode.
+const BASE_FIELD_ALIASES: Record<string, string[]> = {
+  sku: ["SKU"],
+  parent: ["Parent SKU"],
+  collection: ["Collection"],
+  fixture: ["Fixture Type"],
+  ignition: ["Power Source", "Gas / Electric", "Gas/Electric"],
+};
+
+function resolveCol(headerRow: Row, aliases: string[]): number {
+  for (const a of aliases) {
+    const idx = headerRow.findIndex(
+      (c) => cellStr(c).toLowerCase() === a.toLowerCase(),
+    );
+    if (idx >= 0) return idx;
+  }
+  return -1;
+}
 
 function classifySide(name: string): "top" | "bottom" | null {
   const n = name.toLowerCase().trim();
@@ -98,15 +153,19 @@ function classifySide(name: string): "top" | "bottom" | null {
   return null;
 }
 
+// The June 10 master pre-dashes parents ("AS-E", "AS-W"). Older sheets used
+// bare "ASE"/"ASW"; keep the dash-insert as a fallback, now covering the W
+// (Weiyan LED) ignition alongside E and G.
 function formatParent(p: string): string {
-  const m = /^([A-Z]+)([EG])$/.exec(p);
+  if (p.includes("-")) return p;
+  const m = /^([A-Z]+)([EGW])$/.exec(p);
   return m ? `${m[1]}-${m[2]}` : p;
 }
 
 function extractSize(sku: string): string | null {
   let m = /^(\d+)[A-Z]+H?$/.exec(sku);
   if (m) return m[1];
-  m = /^[A-Z]+(\d+)[EG]?$/.exec(sku);
+  m = /^[A-Z]+(\d+)[EGW]?$/.exec(sku);
   if (m) return m[1];
   return null;
 }
@@ -125,58 +184,26 @@ if (!fs.existsSync(SRC)) {
 }
 
 const wb = XLSX.read(fs.readFileSync(SRC), { type: "buffer" });
-const sheetName =
-  wb.SheetNames.find((n) => n.toLowerCase().includes("master")) ??
-  wb.SheetNames[0];
-const ws = wb.Sheets[sheetName];
 
-// Read entire sheet as array-of-arrays with raw values
-const grid = XLSX.utils.sheet_to_json<Row>(ws, {
-  header: 1,
-  defval: null,
-  raw: true,
-  blankrows: true,
-}) as Row[];
+// The June 10 workbook has five tabs. We read exactly the two product tabs and
+// nothing else. The "Accessories" tab ("Master Accessory Index 2026") is a flat
+// catalog of standalone replacement parts (e.g. "WEIYAN Flame Bulb") and MUST
+// NOT be promoted into the configurator accessory grid — doing so would emit
+// bogus "-XXX" suffixes on buildable SKUs. "Parts" and "Image Family Links" are
+// likewise out of scope here (June 10 brief).
+const PRODUCT_TABS: { label: string; aliases: string[] }[] = [
+  { label: "Master Sheet E+G", aliases: ["Master Sheet E+G", "Master Sheet"] },
+  { label: "Weiyan LED", aliases: ["Weiyan LED", "WEIYAN"] },
+];
 
-if (grid.length < 3) {
-  console.error("Master sheet has fewer than 3 rows — nothing to extract.");
-  process.exit(1);
-}
-
-const row1 = grid[0]; // section banners
-const row2 = grid[1]; // sub-headers (accessory names)
-const maxCols = Math.max(
-  row1.length,
-  row2.length,
-  ...grid.map((r) => r.length),
-);
-
-// Determine section column ranges from row 1
-const sectionStarts: number[] = [];
-for (let c = 0; c < maxCols; c++) {
-  const v = cellStr(row1[c]);
-  if (v !== "") sectionStarts.push(c);
-}
-const sectionRanges: { start: number; end: number; name: string }[] = [];
-for (let i = 0; i < sectionStarts.length; i++) {
-  const s = sectionStarts[i];
-  const end =
-    i + 1 < sectionStarts.length ? sectionStarts[i + 1] - 1 : maxCols - 1;
-  sectionRanges.push({ start: s, end, name: cellStr(row1[s]) });
-}
-
-// Map accessory columns → (category, accessory name)
-const colToCategory = new Map<number, string>();
-const colToAccName = new Map<number, string>();
-for (const { start, end, name } of sectionRanges) {
-  if (!ACCESSORY_SECTIONS.has(name)) continue;
-  for (let c = start; c <= end; c++) {
-    const accName = cellStr(row2[c]);
-    if (accName !== "") {
-      colToCategory.set(c, name);
-      colToAccName.set(c, accName);
-    }
+function findSheet(aliases: string[]): { name: string; ws: XLSX.WorkSheet } | null {
+  for (const a of aliases) {
+    const hit = wb.SheetNames.find(
+      (n) => n.trim().toLowerCase() === a.toLowerCase(),
+    );
+    if (hit) return { name: hit, ws: wb.Sheets[hit] };
   }
+  return null;
 }
 
 type Accessory = { code: string; name: string; category: string };
@@ -189,32 +216,98 @@ type Record_ = {
   accessories: Accessory[];
 };
 
-// Column indexes (1-based in the original Python; here 0-based after subtracting 1)
-const COL_SKU = 0;
-const COL_PARENT = 1;
-const COL_COLLECTION = 4;
-const COL_FIXTURE = 6;
-const COL_IGNITION = 8;
-
 const records: Record_[] = [];
-for (let r = 2; r < grid.length; r++) {
-  const row = grid[r];
-  const sku = cellStr(row[COL_SKU]);
-  const parent = cellStr(row[COL_PARENT]);
-  if (!sku || !parent) continue;
-  const collection = cellStr(row[COL_COLLECTION]);
-  if (!collection) continue;
-  const fixture = cellStr(row[COL_FIXTURE]);
-  const ignition = cellStr(row[COL_IGNITION]);
 
-  const accessories: Accessory[] = [];
-  for (const [c, cat] of colToCategory) {
-    const v = cellStr(row[c]);
-    if (v === "") continue;
-    accessories.push({ code: v, name: colToAccName.get(c)!, category: cat });
+for (const tab of PRODUCT_TABS) {
+  // No silent fallback to sheet 0 — that masked the schema drift before. If a
+  // required tab is missing or renamed beyond its aliases, fail loud.
+  const found = findSheet(tab.aliases);
+  if (!found) {
+    console.error(
+      `Required tab not found: "${tab.label}" (aliases tried: ${tab.aliases.join(
+        ", ",
+      )}). Available tabs: ${wb.SheetNames.join(", ")}`,
+    );
+    process.exit(1);
+  }
+  const { name: sheetName, ws } = found;
+
+  const grid = XLSX.utils.sheet_to_json<Row>(ws, {
+    header: 1,
+    defval: null,
+    raw: true,
+    blankrows: true,
+  }) as Row[];
+
+  if (grid.length < 3) {
+    console.error(`Tab "${sheetName}" has fewer than 3 rows — nothing to extract.`);
+    process.exit(1);
   }
 
-  records.push({ sku, parent, collection, fixture, ignition, accessories });
+  const bannerRow = grid[0]; // section banners
+  const headerRow = grid[1]; // sub-headers (field + accessory names)
+  const maxCols = Math.max(
+    bannerRow.length,
+    headerRow.length,
+    ...grid.map((r) => r.length),
+  );
+
+  // Resolve base-field columns by header name (per tab — layouts differ).
+  const cols: Record<string, number> = {};
+  for (const [field, aliases] of Object.entries(BASE_FIELD_ALIASES)) {
+    const idx = resolveCol(headerRow, aliases);
+    if (idx < 0) {
+      console.error(
+        `Tab "${sheetName}": required column "${field}" not found (aliases: ${aliases.join(
+          ", ",
+        )}).`,
+      );
+      process.exit(1);
+    }
+    cols[field] = idx;
+  }
+
+  // Determine section column ranges from the banner row, normalizing each
+  // banner to a canonical accessory category (or skipping non-accessory ones).
+  const sectionStarts: number[] = [];
+  for (let c = 0; c < maxCols; c++) {
+    if (cellStr(bannerRow[c]) !== "") sectionStarts.push(c);
+  }
+  const colToCategory = new Map<number, string>();
+  const colToAccName = new Map<number, string>();
+  for (let i = 0; i < sectionStarts.length; i++) {
+    const start = sectionStarts[i];
+    const end =
+      i + 1 < sectionStarts.length ? sectionStarts[i + 1] - 1 : maxCols - 1;
+    const cat = normalizeBanner(cellStr(bannerRow[start]));
+    if (!cat) continue;
+    for (let c = start; c <= end; c++) {
+      const accName = cellStr(headerRow[c]);
+      if (accName === "" || isDroppedAccessory(accName)) continue;
+      colToCategory.set(c, cat);
+      colToAccName.set(c, accName);
+    }
+  }
+
+  for (let r = 2; r < grid.length; r++) {
+    const row = grid[r];
+    const sku = cellStr(row[cols.sku]);
+    const parent = cellStr(row[cols.parent]);
+    if (!sku || !parent) continue;
+    const collection = cellStr(row[cols.collection]);
+    if (!collection) continue;
+    const fixture = cellStr(row[cols.fixture]);
+    const ignition = cellStr(row[cols.ignition]);
+
+    const accessories: Accessory[] = [];
+    for (const [c, cat] of colToCategory) {
+      const v = cellStr(row[c]);
+      if (isNA(v)) continue;
+      accessories.push({ code: v, name: colToAccName.get(c)!, category: cat });
+    }
+
+    records.push({ sku, parent, collection, fixture, ignition, accessories });
+  }
 }
 
 type AccessoryOption = {
@@ -493,12 +586,25 @@ fs.writeFileSync(
 );
 
 // 4. taxonomy.json — rules + human-readable explanations
+const ledFamilies = Object.keys(families)
+  .filter((k) => families[k].ignition === "LED")
+  .sort();
 const taxonomyPayload = {
   ruleSetVersion: RULE_SET_VERSION,
   categoryOrder: CAT_ORDER,
   mountMutex: MOUNT_MUTEX,
   additiveCategories: Array.from(ADDITIVE_CATEGORIES).sort(),
   companionRules: COMPANION_RULES,
+  ignitions: [
+    { code: "E", powerSource: "Electric", suffix: "lives in base SKU (…E)" },
+    { code: "G", powerSource: "Gas", suffix: "lives in base SKU (…G)" },
+    {
+      code: "W",
+      powerSource: "LED",
+      suffix: "Weiyan LED — lives in base SKU (…W), no electric or gas tail",
+    },
+  ],
+  ledFamilies,
   ruleExplanations: {
     mountMutex:
       "WALL MOUNT, WALL MOUNT ACCESSORIES, CEILING MOUNT, and POST & PIER MOUNT are mutually exclusive at the category level. A single SKU contains options from at most one of these categories, with two companion exceptions (EE and GH).",
@@ -507,11 +613,13 @@ const taxonomyPayload = {
     companionRules:
       "When an accessory listed in companionRules is selected, the target companionCategory panel is hidden and a dedicated companion sub-panel appears. One companion pick is required for a valid SKU. companionOptions value '*' means all options available in the target category for the selected base SKU.",
     ignitionExclusions:
-      "Gas families do not surface the ELECTRIC category panel. Electric families do not surface the GAS category panel. The exclusion is at the category-render layer, not the data layer.",
+      "Gas families do not surface the ELECTRIC category panel. Electric families do not surface the GAS category panel. LED (Weiyan) families surface neither — the W ignition has no electric or gas tail. The exclusion is at the category-render layer, not the data layer.",
     brassOnly:
       "Families with brassOnly: true (currently AOB-E and AOB-G) skip the finish suffix entirely. Output SKUs look like AOB28E with no finish code appended.",
+    ledFamilies:
+      "29 collections gained a Weiyan LED variant on 2026-06-10, keyed with a -W parent (e.g. AS-W). Each is additive — the existing E and G families are unchanged. W base SKUs take BLK / BRZ / GRAY / CLEAR plus the Antique Copper default; the W is part of the base SKU, never an accessory suffix.",
     skuCodeOrder:
-      "base + finish + mount + companion + decorative + electric + gas. Deterministic regardless of click order.",
+      "base + finish + mount + companion + decorative + electric + gas. Deterministic regardless of click order. LED (W) families have no electric or gas segment, so their order ends at decorative.",
   },
 };
 fs.writeFileSync(

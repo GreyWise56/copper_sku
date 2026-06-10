@@ -275,9 +275,13 @@ export function initController(opts: {
       // Ignition-specific panel hiding. The master sheet stores compliance
       // features (ADS / TLA / shades) under the ELECTRIC column even though
       // the column itself shouldn't appear for Gas SKUs, and vice versa.
-      // Dual-ignition fixtures keep both panels (neither check fires).
-      if (cat === "ELECTRIC" && fam.ignition === "Gas") continue;
-      if (cat === "GAS" && fam.ignition === "Electric") continue;
+      // LED (Weiyan) fixtures have NO gas or electric tail — hide both panels.
+      // (The extractor already emits no ELECTRIC/GAS grid for W families; this
+      // is the explicit UI guarantee per the June 10 brief.)
+      if (cat === "ELECTRIC" && (fam.ignition === "Gas" || fam.ignition === "LED"))
+        continue;
+      if (cat === "GAS" && (fam.ignition === "Electric" || fam.ignition === "LED"))
+        continue;
 
       let opts = fam.accessoryGrid[cat].filter((opt) =>
         state.baseSkus.every((sku) => opt.codes[sku] !== undefined),

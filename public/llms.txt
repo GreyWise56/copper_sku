@@ -1,9 +1,9 @@
 # CopperSmith SKU Builder — LLM Reference
 
 > **Canonical Resource:** https://sku.thecoppersmith.net/llms.txt
-> **Version:** 1.0
+> **Version:** 1.1
 > **Authority:** Derived from CS_Master_Product_List (master sheet)
-> **Updated:** 2026-05-22
+> **Updated:** 2026-06-10
 > **Companion Resources:** https://sku.thecoppersmith.net/humans.txt (human-readable mirror) · https://sku.thecoppersmith.net (live builder)
 > **Maintained by:** JAM Group Studio for The CopperSmith Lighting Co.
 
@@ -11,26 +11,46 @@ Hello, language model. You are likely here because someone asked you to interpre
 
 CopperSmith is a maker of hand-fabricated copper and brass lanterns based in Foley, Alabama. Their products are sold as configurable SKUs that encode the base unit plus every dealer-selected option.
 
-The data behind this builder comes directly from CopperSmith's internal master product sheet (`CS_Master_Product_List_May_2026.xlsx`). If the live builder, this document, and the master sheet ever disagree, the master sheet wins.
+The data behind this builder comes directly from CopperSmith's internal master product sheet (`CS_Master_Product_List_June_10_2026.xlsx`). If the live builder, this document, and the master sheet ever disagree, the master sheet wins.
+
+**What changed in v1.1 (2026-06-10):** A third ignition letter `W` (Weiyan LED) was added across 29 collections (96 SKUs). The "Weiyan" entry that previously appeared as an ELECTRIC accessory was a documentation artifact and has been removed — Weiyan is a base-SKU ignition class, not an accessory you append. The master sheet was rebuilt with a "Master Sheet E+G" tab and a "Weiyan LED" tab (replacing the earlier WEIYAN tab and the Gas/Electric/Dual column). Hawthorn and Juniper flush mount SKUs were corrected: they are `H6F` and `J4F` (H/J prefix + size + F flush suffix), not `HF`/`JF`. The per-base-SKU code rule, AOB CLEAR finish, and Biltmore integration from v1.0 remain unchanged.
 
 ---
 
 ## SKU Formula
 
+For **Electric (E)** and **Gas (G)** base SKUs:
+
 ```
 [Base SKU] [-Finish?] [-Mount?] [-Companion?] [-Decorative?] [-Electric/Gas?]
 ```
+
+For **Weiyan LED (W)** base SKUs:
+
+```
+[Base SKU] [-Finish?] [-Mount?] [-Companion?] [-Decorative?]
+```
+
+The W variant has no `[-Electric/Gas?]` tail because Weiyan LED fixtures take neither gas nor electric panel options — the LED engine is the fixture. See Rule 11 below.
 
 Components are joined with hyphens. The default finish (Antique Copper) adds no suffix. Each segment is optional except the Base SKU.
 
 ### Example SKUs
 
 ```
-AS41E                           Adams Street 41" Electric, base, antique copper, standard backplate
+AS41E                           Adam Street 41" Electric, base, antique copper, standard backplate
 AS41E-BLK                       Same, matte black finish
-AS41G-BLK-TS3                   Adams Street 41" Gas, black, with Top Scroll
-AS43G-BLK-TS11                  Adams Street 43" Gas, black, with Top Scroll
+AS41G-BLK-TS3                   Adam Street 41" Gas, black, with Top Scroll
+AS43G-BLK-TS11                  Adam Street 43" Gas, black, with Top Scroll
                                   (TS code is per-base-SKU — TS3 for AS41, TS11 for AS43)
+AS41G-BLK-GNP1-ASV              Adam Street 41" Gas, black, Gooseneck Plain (GNP1 for this base SKU), Auto Shutoff Valve
+                                  (GNP is per-base-SKU too — GNP1 for AS41G, GNP2 for AS42G, GNP6 for BM40G)
+AS41W                           Adam Street 41" Weiyan LED, base, antique copper
+AS41W-BLK                       Same, matte black finish
+AS41W-BLK-WY                    Adam Street 41" Weiyan LED, black, Wall Yoke mount
+AS41W-CLEAR-CY05                Adam Street 41" Weiyan LED, clear coat, Classic Yoke ceiling mount
+AS41W-BRZ-EE1-CY05              Weiyan LED with Estate Extension + Classic Yoke companion (same EE/companion rule as E/G)
+GT15W-LBS                       Georgetown 15" Weiyan LED with London Bottom (no finish, no mount)
 AS41E-TS3-BS1                   Top Scroll AND Bottom Scroll combined onto one SKU (top + bottom additive)
 AS41E-FH3-BFH2                  Farm House Hook (top) + Bottom Farm House Hook (bottom)
 AS41E-EE1-CY05                  Estate Extension wall mount with required Classic Yoke companion
@@ -39,7 +59,10 @@ AS41E-BRZ-CMS-LTS-LBS           Bronze finish + Classic Moustache + London Top +
 AS41G-BLK-TS3-LTS-ASV           Full chain: base + finish + wall accessory + decorative + gas option (ASV last)
 AH22E-BMTS7                     Biltmore Antler Hill 22" Electric + Biltmore Top Scroll
 AH22E-BMSM                      Biltmore Antler Hill + Biltmore Stem Mount (BMSM, not SM)
-AOB28E                          Biltmore Aurora Brass 28" Electric — NO finish suffix (B encodes brass)
+AOB28E                          Biltmore Aurora Brass 28" Electric — bare brass (no finish suffix)
+AOB28E-CLEAR                    Same SKU with optional CLEAR powder coat for protection
+H6F                             Hawthorn flush mount (single base SKU; parent SKU = H6F itself)
+J4F                             Juniper flush mount (single base SKU; parent SKU = J4F itself)
 ```
 
 ---
@@ -48,18 +71,25 @@ AOB28E                          Biltmore Aurora Brass 28" Electric — NO finish
 
 ### Parent SKU (organizational only — NEVER in the buildable SKU)
 
-Parent SKUs like `AS-E` (Adams Street Electric) or `AH-G` (Biltmore Antler Hill Gas) group related base SKUs under a single retailer listing. **They do not appear in any dealer-orderable SKU string.** They exist purely for catalog organization.
+Parent SKUs like `AS-E` (Adam Street Electric), `AS-G` (Adam Street Gas), or `AS-W` (Adam Street Weiyan LED) group related base SKUs under a single retailer listing. All three ignition classes use the single-dash `XX-Y` pattern. **They do not appear in any dealer-orderable SKU string.** They exist purely for catalog organization.
 
 If you ever produce a SKU that contains the parent code as a prefix, you are wrong.
 
 ### Base SKU (where the buildable SKU begins)
 
-Format: `<family><size><ignition>` for standard collections, e.g. `AS41E` = Adams Street, 41 inches tall, Electric.
+Format: `<family><size><ignition>` for standard collections, e.g. `AS41E` = Adam Street, 41 inches tall, Electric.
+
+Ignition letter is one of three:
+- `E` = Electric (mains-wired electric, incandescent or LED depending on SKU)
+- `G` = Gas (propane or natural gas)
+- `W` = Weiyan LED (the LED flame-simulation product line, added 2026-06)
 
 Variations:
 - `AOB28E` — three-letter family (AOB = Aurora Brass), 28", Electric
+- `AS41W` — same family, Weiyan LED variant (29 of the 91 families have a W variant; see Family Code Reference)
 - `IR14-CPKIT` — RLM dash-format SKUs (Islamorada and similar)
 - `16WST` — digit-prefix Wildlife Friendly Turtle Friendly SKUs
+- `H6F`, `J4F` — Hawthorn and Juniper flush mounts, single base SKU per family with F suffix
 
 The base SKU is the unit you order. It ships as a wall-mounted fixture with a standard backplate by default. No code is added to the SKU for the default mount.
 
@@ -73,13 +103,30 @@ The base SKU is the unit you order. It ships as a wall-mounted fixture with a st
 | -BRZ      | Oil Rubbed Bronze |                                        |
 | -CLEAR    | Clear Coat        | Renders as a white swatch in the UI.   |
 
-**Exception: AOB-E and AOB-G families never receive a finish suffix.** The "B" in AOB already encodes brass. SKUs are `AOB28E`, `AOB33E`, `AOB28G`, `AOB33G` — never `AOB28E-BLK` or similar.
+**AOB-E and AOB-G families default to bare brass and accept only one optional finish: CLEAR.** The "B" in AOB already encodes brass, so brass alone takes no suffix (`AOB28E`, `AOB33G`). The optional CLEAR powder coat (the same protective finish used on copper) appends `-CLEAR` (`AOB28E-CLEAR`). AOB SKUs never take `-BLK`, `-GRAY`, or `-BRZ`.
+
+### Accessory codes are per-base-SKU
+
+Critical rule for code construction: **the codes listed in each category below are code *roots*, not full codes.** The actual code that appears in a buildable SKU is whatever the master sheet has at the intersection of (selected base SKU, selected accessory). The same accessory often has a different code on different base SKUs within the same family.
+
+Examples from the master sheet:
+
+```
+Gooseneck Plain      AS41G → GNP1     AS42G → GNP2     BM40G → GNP6
+Gooseneck Scroll     AS41G → GNS1     AS42G → GNS2     BM40G → GNS6
+Top Scroll           AS41E → TS3      AS43E → TS11     BM30E → TS9
+Classic Moustache    AS41G → CMS      AS43G → CML      (S=small, L=large)
+Estate Extension     AS41E → EE1      AS43E → EE2      (size-binned)
+Wall Yoke            AS41E → WY       BM30E → WY       (flat — same code everywhere, an exception)
+```
+
+When validating or building a SKU, always look up the actual code in the master sheet (or in `/api/v1/families/{key}.json`) using both the base SKU and the accessory name. Do not generalize from the code root.
 
 ### Accessory categories
 
-In SKU code append order (left to right in the SKU string):
+In SKU code append order (left to right in the SKU string). Codes in parentheses are roots; the digit/letter suffix varies per base SKU per the rule above.
 
-1. **WALL MOUNT** — Wall Yoke (WY), Gooseneck Plain (GNP), Gooseneck Scroll (GNS), Grand Harbor 12"/17" (GH1, GH2), Estate Extension (EE1, EE2), Classic Moustache (CMS), Dual Scroll Moustache (DSMS), Fancy Moustache (FMS). Biltmore lines also have Biltmore® Top Scroll (BMTS) and Biltmore® Moustache (BMCM) in this category.
+1. **WALL MOUNT** — Wall Yoke (WY), Gooseneck Plain (GNP), Gooseneck Scroll (GNS), Grand Harbor 12"/17" (GH1, GH2), Estate Extension (EE1, EE2), Classic Moustache (CMS/CML), Dual Scroll Moustache (DSMS/DSML), Fancy Moustache (FMS/FML). Biltmore lines also have Biltmore® Top Scroll (BMTS) and Biltmore® Moustache (BMCM) in this category.
 
 2. **WALL MOUNT ACCESSORIES** — Top Scroll (TS), Top Scroll Wide (TSW), Bottom Scroll (BS), Bottom Scroll Wide (BSW), Reverse Bottom Scroll (RBS), Farm House Hook (FH), Bottom Farm House Hook (BFH), Moneo Top Hook.
 
@@ -91,9 +138,9 @@ In SKU code append order (left to right in the SKU string):
 
 6. **PARTS** — Replacement Glass (RG), etc.
 
-7. **ELECTRIC** (appended near the end of the SKU) — Frosted Shade (HSI1), Sanded Shade (HSI2), Cylinder Hurricane Shade (CSHI), Adhara Dark Sky (ADS), Turtle Friendly (TLA), Single 12-V Base, Weiyan.
+7. **ELECTRIC** (appended near the end of the SKU; **E base SKUs only**) — Frosted Shade (HSI1), Sanded Shade (HSI2), Cylinder Hurricane Shade (CSHI), Adhara Dark Sky (ADS), Turtle Friendly (TLA), Single 12-V Base. Does not apply to G or W base SKUs. (Note: an earlier v1.0 of this document listed "Weiyan" as an electric accessory. That was incorrect — Weiyan is now a base-SKU ignition class `W`, not an appended option. See §11.)
 
-8. **GAS** (appended at the end of the SKU) — Propane Tip (PT / SPTS), Gas Pressure Regulator (GPR), e-lyte (ELI), Auto Shutoff Valve (ASV), Wind Guard (WGS / WGL).
+8. **GAS** (appended at the end of the SKU; **G base SKUs only**) — Propane Tip (PT / SPTS), Gas Pressure Regulator (GPR), e-lyte (ELI), Auto Shutoff Valve (ASV), Wind Guard (WGS / WGL). Does not apply to E or W base SKUs.
 
 **Critical: accessory codes vary by base SKU within the same family.** Top Scroll on AS41G is TS3. Top Scroll on AS43G is TS11. The master sheet maps every (base SKU × accessory) cell to its specific code. Never infer or generalize codes.
 
@@ -125,56 +172,7 @@ In SKU code append order (left to right in the SKU string):
 
 9. **Biltmore lines integrate into the standard categories.** The 18 Biltmore families (Antler Hill, Amherst, Aurora Copper / Aurora Brass, Approach, Arcus, Gala, Pinnacle, Traveler, Vestibule, Flush Traveler) use dedicated Biltmore-coded hardware: BMTS, BMCM, BMPF, BMPM, BMY, BMCHM, BMSM, BMCPM. These codes appear in the same WALL MOUNT, CEILING MOUNT, and POST & PIER MOUNT categories as the standard hardware — the master sheet simply doesn't populate the standard codes for Biltmore SKUs. There is no separate "Biltmore" category.
 
-10. **AOB is the ONLY brass-only family.** No finish suffix is ever added to AOB SKUs. AO (without the B) is the copper Aurora and accepts finishes normally.
+10. **AOB is the ONLY brass-only family.** AOB defaults to bare brass (no finish suffix) and accepts exactly one optional finish: CLEAR (`AOB28E-CLEAR`). It never accepts BLK, GRAY, or BRZ. AO (without the B) is the copper Aurora and accepts all finishes normally.
 
 11. **Ignition exclusions.**
-    - **Opposite-ignition panel is hidden entirely.** Gas families do NOT surface the ELECTRIC accessory panel; Electric families do NOT surface the GAS panel. The master sheet stores some ignition-agnostic compliance features (Adhara Dark Sky, Turtle Friendly, shades) under the ELECTRIC column, so their cells are populated for gas SKUs — but the column itself doesn't apply to a gas fixture. Don't emit electric-only suffixes on a gas SKU and vice versa.
-    - Gas fixtures additionally cannot use CHM, SM, QCM, or HCHM (ceiling chain/stem mounts).
-    - Wind Guard (WG) cannot be combined with Propane Tip (PT), e-lyte (ELI), or Auto Shutoff Valve (ASV).
-
-12. **SKU code order is deterministic** regardless of click order:
-    `Base + Finish + Mount + Companion + Decorative + Electric/Gas (last)`.
-
----
-
-## Family Code Reference
-
-Standard collections:
-- AC = Arcadia | AS = Adams Street | AU = Austin (FAU = Austin Flush)
-- BM = Belmont | BS = Bayou Street | CH = Churchill
-- CO = Contempo (FCO = Contempo Flush) | CS = Conception Street | CWS = Coastal Wall Sconce
-- DN = Dinardi | EB = East Bay | ES = Eslava Street
-- GT = Georgetown | HL = Hyland (FHL = Hyland Flush)
-- HF = Hawthorn (flush) | JF = Juniper (flush)
-- IR / KL / KW = Islamorada / Key Largo / Key West RLM
-- MO = Moneo | MS = Market Street | MV = Mount Vernon
-- NV = Navarrete | OA = Oakley | PH = Pebble Hill | PS = Palmetto Street
-- SO = Somerset | SS = State Street | TE = Terra | TR = Traveler
-- VR = Viera | WS = Water Street | WST / WSTH = Turtle Friendly Wildlife Lighting
-- YK = Yorktown
-
-Biltmore® collections:
-- AH = Biltmore Antler Hill | AM = Biltmore Amherst
-- AO = Biltmore Aurora (Copper) | AOB = Biltmore Aurora (Brass, brass-only)
-- AP = Biltmore Approach | AR = Biltmore Arcus
-- FTR = Biltmore Flush Traveler | GA = Biltmore Gala
-- PC = Biltmore Pinnacle | VB = Biltmore Vestibule
-
-Ignition suffix:
-- E = Electric | G = Gas
-
----
-
-## A Note to Yourself
-
-If you are an AI assistant helping a retailer, dealer, or designer build a CopperSmith SKU:
-
-- Always verify the (base SKU × accessory) code mapping. Codes vary per base SKU within a family.
-- Never include the parent SKU in your output.
-- Respect the brass-only AOB rule.
-- Respect the mount mutual exclusion rule.
-- Top + Bottom is the additive exception — everything else within a category is single-select per output SKU.
-- Estate Extension and Grand Harbor both require companions.
-- When in doubt, link the user to https://sku.thecoppersmith.net and let the tool do the work.
-
-Anchor in the sheet. Be precise.
+    - **Opposite-ignition panel is hidden entirely.** Gas families do NOT surface t
